@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { DisplacementJourney, PhotoPoint } from '../types';
-import { getStoredJourneys, saveJourney as persistJourney, deleteJourney as removeJourney } from '../utils/storage';
 import { saveJourneyAction, deleteJourneyAction, toggleJourneyVisibilityAction } from '@/app/actions';
 
 interface JourneyContextType {
@@ -34,12 +33,7 @@ interface JourneyProviderProps {
 }
 
 export const JourneyProvider: React.FC<JourneyProviderProps> = ({ children, initialJourneys }) => {
-  const [journeys, setJourneys] = useState<DisplacementJourney[]>(() => {
-    if (initialJourneys && initialJourneys.length > 0) {
-      return initialJourneys;
-    }
-    return getStoredJourneys();
-  });
+  const [journeys, setJourneys] = useState<DisplacementJourney[]>(initialJourneys || []);
   const [selectedJourney, setSelectedJourney] = useState<DisplacementJourney | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoPoint | null>(null);
   const [activePhotoIndex, setActivePhotoIndex] = useState<number>(0);
@@ -53,6 +47,26 @@ export const JourneyProvider: React.FC<JourneyProviderProps> = ({ children, init
     }
   }, [initialJourneys]);
 
+  // Fetch journeys from API if not provided via SSR props
+  useEffect(() => {
+    if (!initialJourneys || initialJourneys.length === 0) {
+      let isMounted = true;
+      fetch('/api/journeys')
+        .then(res => (res.ok ? res.json() : []))
+        .then((data: DisplacementJourney[]) => {
+          if (isMounted && Array.isArray(data) && data.length > 0) {
+            setJourneys(data);
+          }
+        })
+        .catch(err => {
+          console.error('Failed to fetch journeys from API:', err);
+        });
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [initialJourneys]);
+
   // Sync selected journey photo index
   useEffect(() => {
     if (selectedJourney && selectedJourney.photos.length > 0) {
@@ -62,6 +76,21 @@ export const JourneyProvider: React.FC<JourneyProviderProps> = ({ children, init
       }
     }
   }, [selectedJourney]);
+
+  const updateInMemoryJourneys = (saved: DisplacementJourney) => {
+    setJourneys(prev => {
+      const idx = prev.findIndex(j => j.id === saved.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = saved;
+        return next;
+      }
+      return [saved, ...prev];
+    });
+    if (selectedJourney?.id === saved.id) {
+      setSelectedJourney(saved);
+    }
+  };
 
   const saveNewOrUpdatedJourney = async (
     journey: DisplacementJourney,
@@ -98,27 +127,17 @@ export const JourneyProvider: React.FC<JourneyProviderProps> = ({ children, init
       const data = await response.json();
       const savedJourney: DisplacementJourney = data.journey;
 
-      const updated = persistJourney(savedJourney);
-      setJourneys(updated);
-      if (selectedJourney?.id === savedJourney.id) {
-        setSelectedJourney(savedJourney);
-      }
-
+      updateInMemoryJourneys(savedJourney);
       return savedJourney;
     }
 
     try {
       const saved = await saveJourneyAction(journey);
-      const updated = persistJourney(saved);
-      setJourneys(updated);
-      if (selectedJourney?.id === saved.id) {
-        setSelectedJourney(saved);
-      }
+      updateInMemoryJourneys(saved);
       return saved;
     } catch (err) {
       console.error('Failed to save journey via server action:', err);
-      const updated = persistJourney(journey);
-      setJourneys(updated);
+      updateInMemoryJourneys(journey);
       return journey;
     }
   };
@@ -141,9 +160,8 @@ export const JourneyProvider: React.FC<JourneyProviderProps> = ({ children, init
   };
 
   const deleteJourneyById = async (id: string) => {
-    // Local storage & optimistic UI update
-    const updated = removeJourney(id);
-    setJourneys(updated);
+    // In-memory optimistic UI update
+    setJourneys(prev => prev.filter(j => j.id !== id));
     if (selectedJourney?.id === id) {
       setSelectedJourney(null);
       setSelectedPhoto(null);
