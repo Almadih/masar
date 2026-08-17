@@ -31,6 +31,8 @@ export interface TranslationDictionary {
     bookmark: string;
     bookmarked: string;
     removeBookmark: string;
+    you: string;
+    activeRoutes: string;
   };
   navbar: {
     explore: string;
@@ -72,6 +74,22 @@ export interface TranslationDictionary {
     clearSearch: string;
     noBookmarksTitle: string;
     noBookmarksDesc: string;
+    heroBadge: string;
+    heroTitle: string;
+    heroDesc: string;
+    heroExploreMap: string;
+    tabCommunity: string;
+    tabMy: string;
+    tabBookmarks: string;
+    searchMyPlaceholder: string;
+    searchBookmarksPlaceholder: string;
+    allCategories: string;
+    noMyJourneysTitle: string;
+    noMyJourneysDesc: string;
+    firstJourneyPrompt: string;
+    routesCount: string;
+    activeRoutesCount: string;
+    selectRouteTip: string;
   };
   journeyDetail: {
     backToExplore: string;
@@ -105,6 +123,29 @@ export interface TranslationDictionary {
     bookmarked: string;
     jumpToWaypoint: string;
     keyboardNavTip: string;
+    totalPath: string;
+    travelingCount: string;
+    startedAt: string;
+    arrivedAt: string;
+    milestoneScrubber: string;
+    milestoneCountOf: string;
+    milestoneScrubTip: string;
+    milestoneNumber: string;
+    noCaption: string;
+    personalFieldNote: string;
+    noPhotosForJourney: string;
+    chronologicalTimeline: string;
+    tapMilestoneTip: string;
+    milestonePhotoFallback: string;
+    expandPhoto: string;
+    savedNotice: string;
+    saveNotice: string;
+    saveJourneyTitle: string;
+    removeSavedTitle: string;
+    shareStoryMenu: string;
+    privateViewAlert: string;
+    privateViewDesc: string;
+    shareTextPrefix: string;
   };
   map: {
     streetView: string;
@@ -194,6 +235,16 @@ export interface TranslationDictionary {
     saveChangesBtn: string;
     alertTitleRequired: string;
     alertPhotoRequired: string;
+    defaultAuthor: string;
+    defaultSummary: string;
+    defaultStart: string;
+    defaultDest: string;
+    defaultTags: string;
+    previewTitle: string;
+    previewVoyager: string;
+    previewStart: string;
+    previewDest: string;
+    locationPending: string;
   };
   locationPicker: {
     modalTitle: string;
@@ -210,6 +261,7 @@ export interface TranslationDictionary {
     presetMay: string;
     presetNow: string;
     confirmBtn: string;
+    defaultCoordinateName: string;
   };
   auth: {
     modalTitle: string;
@@ -222,6 +274,7 @@ export interface TranslationDictionary {
     guestBtn: string;
     creatingSession: string;
     privacyNotice: string;
+    defaultGuestName: string;
   };
   admin: {
     moderatorCenter: string;
@@ -321,6 +374,8 @@ export const translations: Record<Locale, TranslationDictionary> = {
       bookmark: 'حفظ في المفضلة',
       bookmarked: 'محفوظ',
       removeBookmark: 'إزالة من المفضلة',
+      you: 'أنت',
+      activeRoutes: 'المسارات النشطة',
     },
     navbar: {
       explore: 'استكشاف المسارات',
@@ -362,6 +417,22 @@ export const translations: Record<Locale, TranslationDictionary> = {
       clearSearch: 'مسح البحث',
       noBookmarksTitle: 'لا توجد مسارات محفوظة',
       noBookmarksDesc: 'يمكنك حفظ المسارات التي تهمك للرجوع إليها لاحقاً بالضغط على أيقونة الإشارة المرجعية.',
+      heroBadge: 'توثيق الذاكرة الحية • Preserving Living Memories',
+      heroTitle: 'قصص الصمود، والنزوح، والأمل',
+      heroDesc: 'كل صورة جغرافية موثقة تحفظ لحظة فارقة في مسار رحلات الأسر السودانية أثناء النزوح. استكشف أرشيف المجتمع أو وثّق مسار رحلتك وقصتك.',
+      heroExploreMap: 'استكشاف الخريطة الجغرافية',
+      tabCommunity: 'قصص المجتمع',
+      tabMy: 'مساراتي الموثقة',
+      tabBookmarks: 'المسارات المحفوظة',
+      searchMyPlaceholder: 'ابحث في مساراتك الخاصة...',
+      searchBookmarksPlaceholder: 'ابحث في المسارات المحفوظة...',
+      allCategories: 'جميع الفئات',
+      noMyJourneysTitle: 'لم تقم بتوثيق أي مسار بعد',
+      noMyJourneysDesc: 'ابدأ بتوثيق مسار رحلتك، ومحطاتها، والذكريات العائلية باستخدام التتبع الجغرافي التفاعلي.',
+      firstJourneyPrompt: 'كن أول من يوثّق مسار نزوح ويخلّد تاريخ المجتمع.',
+      routesCount: 'المسارات ({count})',
+      activeRoutesCount: 'المسارات النشطة ({count})',
+      selectRouteTip: 'اختر مساراً لاستعراض محطاته المصورة.',
     },
     journeyDetail: {
       backToExplore: 'العودة إلى استكشاف المسارات',
@@ -395,6 +466,29 @@ export const translations: Record<Locale, TranslationDictionary> = {
       bookmarked: 'مسار محفوظ',
       jumpToWaypoint: 'الانتقال إلى هذه المحطة',
       keyboardNavTip: 'استخدم الأسهم يميناً ويساراً للتنقل بين المحطات',
+      totalPath: 'إجمالي المسار',
+      travelingCount: '{count} أفراد مسافرين',
+      startedAt: 'انطلقت في {date}',
+      arrivedAt: 'وصلت في {date}',
+      milestoneScrubber: 'مستعرض المحطات التفاعلي',
+      milestoneCountOf: 'المحطة {current} من {total}',
+      milestoneScrubTip: 'استخدم الأسهم ◀ ▶ للتنقل',
+      milestoneNumber: 'المحطة رقم #{step}',
+      noCaption: 'لا يوجد تعليق مضاف.',
+      personalFieldNote: 'ملاحظة ميدانية شخصية:',
+      noPhotosForJourney: 'لا توجد صور محطات موثقة لهذا المسار بعد.',
+      chronologicalTimeline: 'التسلسل الزمني للمسار ({count})',
+      tapMilestoneTip: 'انقر على المحطة لعرضها على الخريطة',
+      milestonePhotoFallback: 'صورة المحطة',
+      expandPhoto: 'تكبير الصورة',
+      savedNotice: 'محفوظ',
+      saveNotice: 'حفظ',
+      saveJourneyTitle: 'حفظ المسار',
+      removeSavedTitle: 'إزالة من المحفوظات',
+      shareStoryMenu: 'مشاركة هذه القصة',
+      privateViewAlert: 'عرض خاص / غير معتمد:',
+      privateViewDesc: 'هذا المسار مخفي عن المجتمع والجمهور، ولا يمكن الوصول إليه إلا من خلالك أو من قبل إدارة المنصة.',
+      shareTextPrefix: '{title} - مسار رحلة نزوح في السودان ({start} ➔ {dest})',
     },
     map: {
       streetView: 'خريطة الشوارع',
@@ -484,6 +578,16 @@ export const translations: Record<Locale, TranslationDictionary> = {
       saveChangesBtn: 'حفظ التعديلات في الأرشيف',
       alertTitleRequired: 'يرجى إدخال عنوان للمسار قبل الحفظ.',
       alertPhotoRequired: 'يرجى رفع صورة واحدة على الأقل لتوثيق مسار الرحلة.',
+      defaultAuthor: 'مسافر مجهول',
+      defaultSummary: 'قصة نزوح وصمود إنساني.',
+      defaultStart: 'السودان',
+      defaultDest: 'بر الأمان',
+      defaultTags: 'نزوح، ملجأ، ذكريات',
+      previewTitle: 'معاينة المسار',
+      previewVoyager: 'مسافر',
+      previewStart: 'البداية',
+      previewDest: 'الوجهة',
+      locationPending: 'موقع قيد التحديد...',
     },
     locationPicker: {
       modalTitle: 'تحديد موقع وتاريخ المحطة',
@@ -500,6 +604,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
       presetMay: '🚚 مايو 2023',
       presetNow: '🕒 الوقت الحالي',
       confirmBtn: 'تأكيد الموقع والوقت',
+      defaultCoordinateName: 'موقع ({lat}, {lng})',
     },
     auth: {
       modalTitle: 'توثيق وحفظ الذاكرة',
@@ -512,6 +617,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
       guestBtn: 'المتابعة كمسافر مجهول (جلسة زائر)',
       creatingSession: 'جاري إنشاء الجلسة...',
       privacyNotice: 'يتم التعامل مع كافة البيانات والشهادات بخصوصية واحترام كامل لكرامة أصحابها.',
+      defaultGuestName: 'مسافر سوداني',
     },
     admin: {
       moderatorCenter: 'مركز التحكم الإشرافي',
@@ -609,6 +715,8 @@ export const translations: Record<Locale, TranslationDictionary> = {
       bookmark: 'Bookmark Journey',
       bookmarked: 'Bookmarked',
       removeBookmark: 'Remove Bookmark',
+      you: 'You',
+      activeRoutes: 'Active Routes',
     },
     navbar: {
       explore: 'Explore Paths',
@@ -650,6 +758,22 @@ export const translations: Record<Locale, TranslationDictionary> = {
       clearSearch: 'Clear search',
       noBookmarksTitle: 'No bookmarked journeys',
       noBookmarksDesc: 'Save stories you want to revisit later by clicking the bookmark icon on any journey card.',
+      heroBadge: 'Preserving Living Memories • توثيق الذاكرة الحية',
+      heroTitle: 'Stories of Resilience, Migration, and Hope',
+      heroDesc: 'Every geotagged photograph preserves a moment along the paths of Sudanese families navigating displacement. Explore the community archive or share your personal journey.',
+      heroExploreMap: 'Explore Geographic Map',
+      tabCommunity: 'Community Stories',
+      tabMy: 'My Journeys',
+      tabBookmarks: 'Bookmarked',
+      searchMyPlaceholder: 'Search within your journeys...',
+      searchBookmarksPlaceholder: 'Search bookmarked journeys...',
+      allCategories: 'All Categories',
+      noMyJourneysTitle: "You haven't documented any journeys yet",
+      noMyJourneysDesc: 'Start documenting your displacement path, milestones, and family memories with interactive GPS tracking.',
+      firstJourneyPrompt: 'Be the first to archive a displacement path and preserve community history.',
+      routesCount: 'Routes ({count})',
+      activeRoutesCount: 'Active Routes ({count})',
+      selectRouteTip: 'Select a route to view photo milestones.',
     },
     journeyDetail: {
       backToExplore: 'Back to Explore Paths',
@@ -683,6 +807,29 @@ export const translations: Record<Locale, TranslationDictionary> = {
       bookmarked: 'Bookmarked',
       jumpToWaypoint: 'Jump to this milestone',
       keyboardNavTip: 'Use Left / Right arrow keys to step through waypoints',
+      totalPath: 'total path',
+      travelingCount: '{count} Traveling',
+      startedAt: 'Started {date}',
+      arrivedAt: 'Arrived {date}',
+      milestoneScrubber: 'Interactive Milestone Scrubber',
+      milestoneCountOf: 'Milestone {current} of {total}',
+      milestoneScrubTip: 'Use ◀ ▶ arrow keys to scrub',
+      milestoneNumber: 'Milestone #{step}',
+      noCaption: 'No caption provided.',
+      personalFieldNote: 'Personal Field Note:',
+      noPhotosForJourney: 'No milestone photos available for this journey.',
+      chronologicalTimeline: 'Chronological Path Timeline ({count})',
+      tapMilestoneTip: 'Tap milestone to view on map',
+      milestonePhotoFallback: 'Milestone photo',
+      expandPhoto: 'Expand Full Photo',
+      savedNotice: 'Saved',
+      saveNotice: 'Bookmark',
+      saveJourneyTitle: 'Bookmark journey',
+      removeSavedTitle: 'Remove from saved',
+      shareStoryMenu: 'Share this story',
+      privateViewAlert: 'Private / Unapproved View:',
+      privateViewDesc: 'This journey is hidden from public view or pending review. It is only accessible to you as the author or an administrator.',
+      shareTextPrefix: '{title} - Sudan Displacement Journey ({start} ➔ {dest})',
     },
     map: {
       streetView: 'Street Map',
@@ -772,6 +919,16 @@ export const translations: Record<Locale, TranslationDictionary> = {
       saveChangesBtn: 'Save Changes',
       alertTitleRequired: 'Please provide a title for your journey.',
       alertPhotoRequired: 'Please upload at least one photo for your displacement path.',
+      defaultAuthor: 'Anonymous Voyager',
+      defaultSummary: 'A story of resilience and displacement.',
+      defaultStart: 'Sudan',
+      defaultDest: 'Safety',
+      defaultTags: 'Displacement, Refuge, Memory',
+      previewTitle: 'Route Preview',
+      previewVoyager: 'Voyager',
+      previewStart: 'Start',
+      previewDest: 'Destination',
+      locationPending: 'Location pending...',
     },
     locationPicker: {
       modalTitle: 'Set Photo Location & Time',
@@ -788,6 +945,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
       presetMay: '🚚 May 2023',
       presetNow: '🕒 Now',
       confirmBtn: 'Confirm Location & Time',
+      defaultCoordinateName: 'Location ({lat}, {lng})',
     },
     auth: {
       modalTitle: 'Document & Preserve',
@@ -800,6 +958,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
       guestBtn: 'Continue as Guest (Anonymous Session)',
       creatingSession: 'Creating Session...',
       privacyNotice: 'Your data is handled with privacy, respect, and dignity.',
+      defaultGuestName: 'Sudanese Voyager',
     },
     admin: {
       moderatorCenter: 'Moderator Control Center',

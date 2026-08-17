@@ -70,7 +70,10 @@ export const ManualLocationPickerModal: React.FC<ManualLocationPickerModalProps>
   };
 
   const handleConfirm = () => {
-    const defaultLoc = locale === 'ar' ? `موقع (${lat.toFixed(4)}, ${lng.toFixed(4)})` : `Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+    const defaultLoc = t('locationPicker.defaultCoordinateName', {
+      lat: lat.toFixed(4),
+      lng: lng.toFixed(4),
+    });
     onSaveLocationAndTime(lat, lng, locationName || defaultLoc, timestamp);
     onClose();
   };

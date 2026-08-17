@@ -314,7 +314,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
           }}
         >
           <Compass size={20} color={currentTab === 'map' ? 'var(--cyan-route)' : 'currentColor'} />
-          <span>{locale === 'ar' ? 'الخريطة' : 'Map'}</span>
+          <span>{t('navbar.map')}</span>
         </button>
 
         <button

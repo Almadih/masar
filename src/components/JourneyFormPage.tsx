@@ -11,6 +11,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../context/ToastContext';
 import { extractBatchPhotoMetadata } from '../utils/exifParser';
 import { reverseGeocode, calculateTotalJourneyDistance } from '../utils/geoHelpers';
+import { formatNumber, formatDistance, formatPhotosCount } from '../utils/i18nHelpers';
 import { ManualLocationPickerModal } from './ManualLocationPickerModal';
 import type { PhotoPoint, DisplacementJourney } from '../types';
 import {
@@ -59,7 +60,7 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
   const [destination, setDestination] = useState(initialJourney?.destination || '');
   const [familyMembersCount, setFamilyMembersCount] = useState<number>(initialJourney?.familyMembersCount || 1);
   const [tagsInput, setTagsInput] = useState(
-    initialJourney?.tags?.join(', ') || (locale === 'ar' ? 'نزوح، ملجأ، ذكريات' : 'Displacement, Refuge, Memory')
+    initialJourney?.tags?.join(', ') || t('uploader.defaultTags')
   );
   const [isPublic, setIsPublic] = useState<boolean>(initialJourney?.isPublic ?? true);
 
@@ -119,7 +120,7 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
 
         let lat = metadata?.latitude || 15.5507;
         let lng = metadata?.longitude || 32.5599;
-        let locName = locale === 'ar' ? 'موقع قيد التحديد...' : 'Location pending...';
+        let locName = t('uploader.locationPending');
 
         if (metadata?.hasExifLocation && metadata.latitude && metadata.longitude) {
           locName = await reverseGeocode(metadata.latitude, metadata.longitude);
@@ -245,13 +246,13 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
     if (photos.length === 0) return null;
     return {
       id: initialJourney?.id || 'preview-journey',
-      title: title.trim() || (locale === 'ar' ? 'معاينة المسار' : 'Route Preview'),
-      authorName: initialJourney?.authorName || user?.name || (locale === 'ar' ? 'مسافر' : 'Voyager'),
+      title: title.trim() || t('uploader.previewTitle'),
+      authorName: initialJourney?.authorName || user?.name || t('uploader.previewVoyager'),
       authorId: initialJourney?.authorId || user?.id || 'guest',
       authorAvatar: initialJourney?.authorAvatar || user?.avatar,
       summary: summary.trim(),
-      startLocation: startLocation.trim() || sortedPhotos[0]?.locationName || (locale === 'ar' ? 'البداية' : 'Start'),
-      destination: destination.trim() || sortedPhotos[sortedPhotos.length - 1]?.locationName || (locale === 'ar' ? 'الوجهة' : 'Destination'),
+      startLocation: startLocation.trim() || sortedPhotos[0]?.locationName || t('uploader.previewStart'),
+      destination: destination.trim() || sortedPhotos[sortedPhotos.length - 1]?.locationName || t('uploader.previewDest'),
       startDate: sortedPhotos[0]?.timestamp.split(' ')[0] || new Date().toISOString().split('T')[0],
       endDate: sortedPhotos[sortedPhotos.length - 1]?.timestamp.split(' ')[0],
       photos: sortedPhotos,
@@ -279,10 +280,10 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
     setIsSaving(true);
 
     try {
-      const defaultAuthor = locale === 'ar' ? 'مسافر مجهول' : 'Anonymous Voyager';
-      const defaultSummary = locale === 'ar' ? 'قصة نزوح وصمود إنساني.' : 'A story of resilience and displacement.';
-      const defaultStart = locale === 'ar' ? 'السودان' : 'Sudan';
-      const defaultDest = locale === 'ar' ? 'بر الأمان' : 'Safety';
+      const defaultAuthor = t('uploader.defaultAuthor');
+      const defaultSummary = t('uploader.defaultSummary');
+      const defaultStart = t('uploader.defaultStart');
+      const defaultDest = t('uploader.defaultDest');
 
       const journeyId = initialJourney?.id || 'journey-' + Date.now();
       const finalPhotos = [...photos]
@@ -727,7 +728,7 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
                   <div>
                     <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff' }}>
                       {t('uploader.milestonesTitle', {
-                        count: locale === 'ar' ? photos.length.toLocaleString('ar-SD') : photos.length.toString(),
+                        count: formatNumber(photos.length, locale),
                       })}
                     </h2>
                     <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
@@ -746,7 +747,7 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
                     fontWeight: 700,
                   }}
                 >
-                  {locale === 'ar' ? photos.length.toLocaleString('ar-SD') : photos.length} {t('common.photos')}
+                  {formatPhotosCount(photos.length, locale, t)}
                 </span>
               </div>
 
@@ -839,7 +840,7 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                   {photos.map((photo, index) => {
                     const stepNumber = index + 1;
-                    const stepFormatted = locale === 'ar' ? stepNumber.toLocaleString('ar-SD') : stepNumber.toString();
+                    const stepFormatted = formatNumber(stepNumber, locale);
 
                     return (
                       <div
@@ -1108,7 +1109,7 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
                     {t('uploader.calculatedDistance')}
                   </span>
                   <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--cyan-route)' }}>
-                    {locale === 'ar' ? totalCalculatedKm.toLocaleString('ar-SD') : totalCalculatedKm.toLocaleString('en-US')} {t('common.km')}
+                    {formatDistance(totalCalculatedKm, locale, t)}
                   </span>
                 </div>
 
@@ -1124,7 +1125,7 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
                     {t('uploader.milestonesRecorded')}
                   </span>
                   <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--primary-terracotta)' }}>
-                    {locale === 'ar' ? photos.length.toLocaleString('ar-SD') : photos.length} {t('common.photos')}
+                    {formatPhotosCount(photos.length, locale, t)}
                   </span>
                 </div>
               </div>

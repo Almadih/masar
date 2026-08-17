@@ -10,6 +10,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useToast } from '@/context/ToastContext';
 import { AuthModal } from '@/components/AuthModal';
 import { DEFAULT_GENERIC_AVATAR } from '@/utils/constants';
+import { formatNumber, formatDistance, formatPhotosCount } from '@/utils/i18nHelpers';
 import {
   MapPin,
   ArrowLeft,
@@ -76,15 +77,25 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
 
   // Initialize and listen to bookmark state
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('masar_bookmarks');
-      if (saved) {
-        const ids: string[] = JSON.parse(saved);
-        setIsBookmarked(ids.includes(journey.id));
+    const loadBookmarks = () => {
+      try {
+        const saved = localStorage.getItem('masar_bookmarks');
+        if (saved) {
+          const ids: string[] = JSON.parse(saved);
+          setIsBookmarked(ids.includes(journey.id));
+        }
+      } catch {
+        setIsBookmarked(false);
       }
-    } catch {
-      setIsBookmarked(false);
-    }
+    };
+    loadBookmarks();
+
+    window.addEventListener('masar-bookmarks-updated', loadBookmarks);
+    window.addEventListener('storage', loadBookmarks);
+    return () => {
+      window.removeEventListener('masar-bookmarks-updated', loadBookmarks);
+      window.removeEventListener('storage', loadBookmarks);
+    };
   }, [journey.id]);
 
   const handleToggleBookmark = () => {
@@ -176,9 +187,11 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
 
   const getShareUrl = () => (typeof window !== 'undefined' ? window.location.href : '');
   const getShareText = () =>
-    locale === 'ar'
-      ? `${journey.title} - مسار رحلة نزوح في السودان (${journey.startLocation} ➔ ${journey.destination})`
-      : `${journey.title} - Sudan Displacement Journey (${journey.startLocation} ➔ ${journey.destination})`;
+    t('journeyDetail.shareTextPrefix', {
+      title: journey.title,
+      start: journey.startLocation,
+      dest: journey.destination,
+    });
 
   const handleShareToWhatsApp = () => {
     const url = getShareUrl();
@@ -325,7 +338,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
           {/* Bookmark Button */}
           <button
             onClick={handleToggleBookmark}
-            title={isBookmarked ? (locale === 'ar' ? 'إزالة من المحفوظات' : 'Remove from saved') : (locale === 'ar' ? 'حفظ المسار' : 'Bookmark journey')}
+            title={isBookmarked ? t('journeyDetail.removeSavedTitle') : t('journeyDetail.saveJourneyTitle')}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -342,7 +355,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
             }}
           >
             <Bookmark size={14} fill={isBookmarked ? 'currentColor' : 'none'} />
-            <span className="desktop-only">{isBookmarked ? (locale === 'ar' ? 'محفوظ' : 'Saved') : (locale === 'ar' ? 'حفظ' : 'Bookmark')}</span>
+            <span className="desktop-only">{isBookmarked ? t('journeyDetail.savedNotice') : t('journeyDetail.saveNotice')}</span>
           </button>
 
           {canManage && (
@@ -445,7 +458,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                 }}
               >
                 <div style={{ padding: '6px 8px 4px', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  {locale === 'ar' ? 'مشاركة هذه القصة' : 'Share this story'}
+                  {t('journeyDetail.shareStoryMenu')}
                 </div>
 
                 {/* WhatsApp */}
@@ -607,7 +620,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <AlertTriangle size={18} color="#fca5a5" style={{ flexShrink: 0 }} />
               <span>
-                <strong>{locale === 'ar' ? 'عرض خاص / غير معتمد:' : 'Private / Unapproved View:'}</strong> {locale === 'ar' ? 'هذا المسار مخفي عن المجتمع والجمهور، ولا يمكن الوصول إليه إلا من خلالك أو من قبل إدارة المنصة.' : `This journey is ${!journey.isPublic ? 'hidden from public view (Private)' : `status: ${journey.status}`}. It is only accessible to you as the author or an administrator.`}
+                <strong>{t('journeyDetail.privateViewAlert')}</strong> {t('journeyDetail.privateViewDesc')}
               </span>
             </div>
             {canManage && (
@@ -682,7 +695,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                 }}
               >
                 <Navigation size={14} className="rtl-mirror" />
-                <span>{journey.distanceKm} {t('common.km')} {locale === 'ar' ? 'إجمالي المسار' : 'total path'}</span>
+                <span>{formatDistance(journey.distanceKm, locale, t)} {t('journeyDetail.totalPath')}</span>
               </div>
 
               <div
@@ -700,7 +713,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                 }}
               >
                 <Camera size={14} />
-                <span>{journey.photos.length} {t('common.photos')}</span>
+                <span>{formatPhotosCount(journey.photos.length, locale, t)}</span>
               </div>
 
               <div
@@ -718,7 +731,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                 }}
               >
                 <Users size={14} />
-                <span>{journey.familyMembersCount || 1} {locale === 'ar' ? 'أفراد مسافرين' : 'Traveling'}</span>
+                <span>{t('journeyDetail.travelingCount', { count: formatNumber(journey.familyMembersCount || 1, locale) })}</span>
               </div>
             </div>
           </div>
@@ -757,8 +770,8 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                   {journey.authorName}
                 </span>
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Calendar size={12} /> {locale === 'ar' ? 'انطلقت في' : 'Started'} {journey.startDate}
-                  {journey.endDate ? ` • ${locale === 'ar' ? 'وصلت في' : 'Arrived'} ${journey.endDate}` : ''}
+                  <Calendar size={12} /> {t('journeyDetail.startedAt', { date: journey.startDate })}
+                  {journey.endDate ? ` • ${t('journeyDetail.arrivedAt', { date: journey.endDate })}` : ''}
                 </span>
               </div>
             </div>
@@ -882,16 +895,16 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Sparkles size={15} color="var(--amber-sand)" />
                 <span style={{ fontSize: '13px', fontWeight: 700, color: '#ffffff' }}>
-                  {locale === 'ar' ? 'مستعرض المحطات التفاعلي' : 'Interactive Milestone Scrubber'}
+                  {t('journeyDetail.milestoneScrubber')}
                 </span>
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                  ({locale === 'ar' ? `المحطة ${activeStepIndex + 1} من ${sortedPhotos.length}` : `Milestone ${activeStepIndex + 1} of ${sortedPhotos.length}`})
+                  ({t('journeyDetail.milestoneCountOf', { current: formatNumber(activeStepIndex + 1, locale), total: formatNumber(sortedPhotos.length, locale) })})
                 </span>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span className="desktop-only" style={{ fontSize: '11px', color: 'var(--text-dim)' }}>
-                  {locale === 'ar' ? 'استخدم الأسهم ◀ ▶ للتنقل' : 'Use ◀ ▶ arrow keys to scrub'}
+                  {t('journeyDetail.milestoneScrubTip')}
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <button
@@ -994,7 +1007,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                     <button
                       key={photo.id}
                       onClick={() => setActiveStepIndex(idx)}
-                      title={`${idx + 1}. ${photo.locationName} (${photo.timestamp.split(' ')[0]})`}
+                      title={`${formatNumber(idx + 1, locale)}. ${photo.locationName} (${photo.timestamp.split(' ')[0]})`}
                       style={{
                         position: 'relative',
                         display: 'flex',
@@ -1033,7 +1046,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                           transform: isActive ? 'scale(1.15)' : 'scale(1)',
                         }}
                       >
-                        {isActive ? idx + 1 : ''}
+                        {isActive ? formatNumber(idx + 1, locale) : ''}
                       </div>
 
                       {/* Active Waypoint Label Bubble */}
@@ -1127,7 +1140,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                 </button>
 
                 <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--amber-sand)' }}>
-                  {locale === 'ar' ? `المحطة ${activeStepIndex + 1} من ${sortedPhotos.length}` : `Milestone ${activeStepIndex + 1} / ${sortedPhotos.length}`}
+                  {t('journeyDetail.milestoneCountOf', { current: formatNumber(activeStepIndex + 1, locale), total: formatNumber(sortedPhotos.length, locale) })}
                 </span>
 
                 <button
@@ -1181,7 +1194,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                   />
                   <button
                     onClick={() => setIsLightboxOpen(true)}
-                    title={locale === 'ar' ? 'تكبير الصورة' : 'Expand Full Photo'}
+                    title={t('journeyDetail.expandPhoto')}
                     style={{
                       position: 'absolute',
                       top: '10px',
@@ -1214,7 +1227,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                       gap: '5px',
                     }}
                   >
-                    <Sparkles size={13} /> {locale === 'ar' ? `المحطة رقم #${activeStepIndex + 1}` : `Milestone #${activeStepIndex + 1}`}
+                    <Sparkles size={13} /> {t('journeyDetail.milestoneNumber', { step: formatNumber(activeStepIndex + 1, locale) })}
                   </div>
                 </div>
 
@@ -1231,7 +1244,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                 </div>
 
                 <p style={{ fontSize: '14px', color: 'var(--text-main)', lineHeight: 1.5, marginBottom: '8px' }}>
-                  "{activePhoto.caption || (locale === 'ar' ? 'لا يوجد تعليق مضاف.' : 'No caption provided.')}"
+                  &ldquo;{activePhoto.caption || t('journeyDetail.noCaption')}&rdquo;
                 </p>
 
                 {activePhoto.notes && (
@@ -1247,13 +1260,13 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                       lineHeight: 1.5,
                     }}
                   >
-                    <strong>{locale === 'ar' ? 'ملاحظة ميدانية شخصية:' : 'Personal Field Note:'}</strong> {activePhoto.notes}
+                    <strong>{t('journeyDetail.personalFieldNote')}</strong> {activePhoto.notes}
                   </div>
                 )}
               </div>
             ) : (
               <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                {locale === 'ar' ? 'لا توجد صور محطات موثقة لهذا المسار بعد.' : 'No milestone photos available for this journey.'}
+                {t('journeyDetail.noPhotosForJourney')}
               </div>
             )}
 
@@ -1261,10 +1274,10 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
             <div style={{ flex: 1, overflowY: 'auto', padding: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
                 <h4 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  {locale === 'ar' ? `التسلسل الزمني للمسار (${sortedPhotos.length})` : `Chronological Path Timeline (${sortedPhotos.length})`}
+                  {t('journeyDetail.chronologicalTimeline', { count: formatNumber(sortedPhotos.length, locale) })}
                 </h4>
                 <span style={{ fontSize: '11px', color: 'var(--cyan-route)' }}>
-                  {locale === 'ar' ? 'انقر على المحطة لعرضها على الخريطة' : 'Tap milestone to view on map'}
+                  {t('journeyDetail.tapMilestoneTip')}
                 </span>
               </div>
 
@@ -1302,7 +1315,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                           flexShrink: 0,
                         }}
                       >
-                        {idx + 1}
+                        {formatNumber(idx + 1, locale)}
                       </div>
 
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -1315,7 +1328,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                           </span>
                         </div>
                         <p style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '2px' }}>
-                          {p.caption || (locale === 'ar' ? 'صورة المحطة' : 'Milestone photo')}
+                          {p.caption || t('journeyDetail.milestonePhotoFallback')}
                         </p>
                       </div>
                     </div>

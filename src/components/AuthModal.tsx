@@ -17,7 +17,7 @@ export const AuthModal: React.FC = () => {
     e.preventDefault();
     setIsGuestLoading(true);
     try {
-      const defaultName = locale === 'ar' ? 'مسافر سوداني' : 'Sudanese Voyager';
+      const defaultName = t('auth.defaultGuestName');
       await loginAsGuest(guestNameInput.trim() || defaultName);
     } finally {
       setIsGuestLoading(false);

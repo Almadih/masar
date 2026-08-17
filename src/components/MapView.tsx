@@ -6,6 +6,7 @@ import 'leaflet/dist/leaflet.css';
 import type { DisplacementJourney, PhotoPoint } from '../types';
 import { useJourney } from '../context/JourneyContext';
 import { useLanguage } from '../context/LanguageContext';
+import { formatNumber, formatDistance, getDirectionArrow } from '../utils/i18nHelpers';
 import { Compass, Maximize2, Minimize2, Globe } from 'lucide-react';
 
 // Fix Leaflet's default icon path issues in Next.js
@@ -331,7 +332,7 @@ export const MapView: React.FC<MapViewProps> = ({
         const marker = L.marker([Number(photo.latitude), Number(photo.longitude)], { icon: customIcon });
 
         // Popup content with preview thumbnail
-        const stepNumFormatted = locale === 'ar' ? (idx + 1).toLocaleString('ar-SD') : (idx + 1).toString();
+        const stepNumFormatted = formatNumber(idx + 1, locale);
         const popupContent = `
           <div style="width: 220px; font-family: inherit; direction: ${locale === 'ar' ? 'rtl' : 'ltr'}; text-align: ${locale === 'ar' ? 'right' : 'left'};">
             <img src="${photo.url}" style="width: 100%; height: 120px; object-fit: cover; border-top-left-radius: 12px; border-top-right-radius: 12px;" />
@@ -401,12 +402,13 @@ export const MapView: React.FC<MapViewProps> = ({
           iconAnchor: [13, 13],
         });
 
-        const distFormatted = locale === 'ar' ? j.distanceKm.toLocaleString('ar-SD') : j.distanceKm.toLocaleString('en-US');
+        const distFormatted = formatDistance(j.distanceKm, locale, t);
+        const arrow = getDirectionArrow(locale);
         const popupContent = `
           <div style="font-family: inherit; min-width: 180px; padding: 4px; direction: ${locale === 'ar' ? 'rtl' : 'ltr'}; text-align: ${locale === 'ar' ? 'right' : 'left'};">
             <div style="font-weight: 700; font-size: 13px; color: #f3f4f6; margin-bottom: 2px;">${j.title}</div>
-            <div style="font-size: 11px; color: #9ca3af; margin-bottom: 8px;">${j.startLocation} ${locale === 'ar' ? '⟵' : '➔'} ${j.destination} (${distFormatted} ${t('common.km')})</div>
-            <a href="/journey/${j.id}" style="display: inline-block; font-size: 12px; font-weight: 700; color: #d96b43; text-decoration: none;">${t('explorer.viewPath')} ${locale === 'ar' ? '⟵' : '➔'}</a>
+            <div style="font-size: 11px; color: #9ca3af; margin-bottom: 8px;">${j.startLocation} ${arrow} ${j.destination} (${distFormatted})</div>
+            <a href="/journey/${j.id}" style="display: inline-block; font-size: 12px; font-weight: 700; color: #d96b43; text-decoration: none;">${t('explorer.viewPath')} ${arrow}</a>
           </div>
         `;
 

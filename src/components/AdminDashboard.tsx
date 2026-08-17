@@ -10,6 +10,7 @@ import {
   updateJourneyStatusAction,
   deleteJourneyAction,
 } from '@/app/actions';
+import { formatNumber, formatDistance } from '@/utils/i18nHelpers';
 import {
   ShieldCheck,
   Eye,
@@ -152,10 +153,6 @@ export function AdminDashboard() {
     }
   };
 
-  const formatNumber = (num: number) => {
-    return locale === 'ar' ? num.toLocaleString('ar-SD') : num.toLocaleString('en-US');
-  };
-
   return (
     <div style={{ maxWidth: '1240px', width: '100%', margin: '0 auto', padding: 'clamp(1rem, 3vw, 2rem) clamp(0.75rem, 2.5vw, 1.5rem)' }}>
       {/* Header Banner */}
@@ -217,9 +214,9 @@ export function AdminDashboard() {
             <span style={{ fontSize: '13px', fontWeight: 600 }}>{t('admin.kpiTotalJourneys')}</span>
             <Layers size={18} color="var(--amber-sand)" />
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 800, color: '#ffffff' }}>{formatNumber(totalJourneys)}</div>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: '#ffffff' }}>{formatNumber(totalJourneys, locale)}</div>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            {t('admin.kpiPhotosRecorded', { count: formatNumber(totalPhotos) })}
+            {t('admin.kpiPhotosRecorded', { count: formatNumber(totalPhotos, locale) })}
           </div>
         </div>
 
@@ -228,9 +225,9 @@ export function AdminDashboard() {
             <span style={{ fontSize: '13px', fontWeight: 600 }}>{t('admin.kpiPublicJourneys')}</span>
             <Eye size={18} color="var(--cyan-route)" />
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--cyan-route)' }}>{formatNumber(publicCount)}</div>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--cyan-route)' }}>{formatNumber(publicCount, locale)}</div>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            {t('admin.kpiHiddenFromFeed', { count: formatNumber(hiddenCount) })}
+            {t('admin.kpiHiddenFromFeed', { count: formatNumber(hiddenCount, locale) })}
           </div>
         </div>
 
@@ -239,7 +236,7 @@ export function AdminDashboard() {
             <span style={{ fontSize: '13px', fontWeight: 600 }}>{t('admin.kpiPendingReview')}</span>
             <AlertTriangle size={18} color="var(--amber-sand)" />
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--amber-sand)' }}>{formatNumber(pendingCount)}</div>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--amber-sand)' }}>{formatNumber(pendingCount, locale)}</div>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
             {t('admin.kpiAwaitingApproval')}
           </div>
@@ -250,7 +247,7 @@ export function AdminDashboard() {
             <span style={{ fontSize: '13px', fontWeight: 600 }}>{t('admin.kpiFlaggedJourneys')}</span>
             <Flag size={18} color="var(--rose-alert)" />
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--rose-alert)' }}>{formatNumber(flaggedCount)}</div>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--rose-alert)' }}>{formatNumber(flaggedCount, locale)}</div>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
             {t('admin.kpiRequiresAction')}
           </div>
@@ -392,10 +389,10 @@ export function AdminDashboard() {
                       {/* Route */}
                       <td style={{ padding: '1rem 1.25rem' }}>
                         <div style={{ fontSize: '13px', color: 'var(--amber-sand)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <MapPin size={14} /> {j.startLocation} {locale === 'ar' ? '⟵' : '➔'} {j.destination}
+                          <MapPin size={14} /> {j.startLocation} <span className="rtl-mirror">➔</span> {j.destination}
                         </div>
                         <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                          {formatNumber(j.distanceKm)} {t('common.km')}
+                          {formatDistance(j.distanceKm, locale, t)}
                         </div>
                       </td>
 
@@ -403,7 +400,7 @@ export function AdminDashboard() {
                       <td style={{ padding: '1rem 1.25rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--text-main)' }}>
                           <Camera size={14} color="var(--cyan-route)" />
-                          <span>{formatNumber(j.photos?.length || 0)}</span>
+                          <span>{formatNumber(j.photos?.length || 0, locale)}</span>
                         </div>
                       </td>
 

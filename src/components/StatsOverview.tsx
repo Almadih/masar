@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import type { DisplacementJourney } from '../types';
 import { Navigation, Users, Camera, Heart, Globe, Compass } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import { formatNumber, formatDistance, formatPhotosCount } from '@/utils/i18nHelpers';
 
 interface StatsOverviewProps {
   journeys: DisplacementJourney[];
@@ -56,7 +57,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ journeys }) => {
             <Navigation size={24} className="rtl-mirror" />
           </div>
           <span style={{ fontSize: '28px', fontWeight: 800, color: '#ffffff' }}>
-            {totalKm.toLocaleString(locale === 'ar' ? 'ar-SD' : 'en-US')} {t('common.km')}
+            {formatDistance(totalKm, locale, t)}
           </span>
           <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('stats.totalDistanceTitle')}</span>
         </div>
@@ -66,7 +67,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ journeys }) => {
             <Compass size={24} />
           </div>
           <span style={{ fontSize: '28px', fontWeight: 800, color: '#ffffff' }}>
-            {totalJourneys.toLocaleString(locale === 'ar' ? 'ar-SD' : 'en-US')} {t('common.routes')}
+            {formatNumber(totalJourneys, locale)} {t('common.routes')}
           </span>
           <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('stats.documentedRoutesTitle')}</span>
         </div>
@@ -76,7 +77,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ journeys }) => {
             <Camera size={24} />
           </div>
           <span style={{ fontSize: '28px', fontWeight: 800, color: '#ffffff' }}>
-            {totalPhotos.toLocaleString(locale === 'ar' ? 'ar-SD' : 'en-US')} {t('common.photos')}
+            {formatPhotosCount(totalPhotos, locale, t)}
           </span>
           <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('stats.photosPreservedTitle')}</span>
         </div>
@@ -86,7 +87,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ journeys }) => {
             <Users size={24} />
           </div>
           <span style={{ fontSize: '28px', fontWeight: 800, color: '#ffffff' }}>
-            {totalFamilyMembers.toLocaleString(locale === 'ar' ? 'ar-SD' : 'en-US')}+ {t('common.souls')}
+            {formatNumber(totalFamilyMembers, locale)}+ {t('common.souls')}
           </span>
           <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('stats.familyMembersTitle')}</span>
         </div>
@@ -119,11 +120,11 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ journeys }) => {
           </div>
 
           <div style={{ background: 'rgba(15, 22, 38, 0.6)', padding: '1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)' }}>
-            <h4 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--emerald-safe)', marginBottom: '4px' }}>
-              {t('stats.corridorSouthTitle')}
+            <h4 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--amber-sand)', marginBottom: '4px' }}>
+              {t('stats.corridorWestTitle')}
             </h4>
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-              {t('stats.corridorSouthDesc')}
+              {t('stats.corridorWestDesc')}
             </p>
           </div>
         </div>

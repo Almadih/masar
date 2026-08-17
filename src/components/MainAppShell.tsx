@@ -12,6 +12,7 @@ import { JourneyCard } from '@/components/JourneyCard';
 import { AuthModal } from '@/components/AuthModal';
 import { StatsOverview } from '@/components/StatsOverview';
 import { Search, Plus, Compass, BookOpen, Heart, MapPin, ArrowRight, User, Globe, Bookmark, X } from 'lucide-react';
+import { formatNumber } from '@/utils/i18nHelpers';
 import type { DisplacementJourney } from '@/types';
 
 const MapView = dynamic(() => import('@/components/MapView').then(mod => mod.MapView), {
@@ -189,7 +190,7 @@ export function MainAppShell({ initialJourneys }: MainAppShellProps) {
                   }}
                 >
                   <Heart size={14} fill="var(--amber-sand)" />
-                  <span>{locale === 'ar' ? 'توثيق الذاكرة الحية • Preserving Living Memories' : 'Preserving Living Memories • توثيق الذاكرة الحية'}</span>
+                  <span>{t('explorer.heroBadge')}</span>
                 </div>
                 <h1
                   style={{
@@ -201,7 +202,7 @@ export function MainAppShell({ initialJourneys }: MainAppShellProps) {
                     color: '#ffffff',
                   }}
                 >
-                  {locale === 'ar' ? 'قصص الصمود، والنزوح، والأمل' : 'Stories of Resilience, Migration, and Hope'}
+                  {t('explorer.heroTitle')}
                 </h1>
                 <p
                   style={{
@@ -211,9 +212,7 @@ export function MainAppShell({ initialJourneys }: MainAppShellProps) {
                     marginBottom: '1.25rem',
                   }}
                 >
-                  {locale === 'ar'
-                    ? 'كل صورة جغرافية موثقة تحفظ لحظة فارقة في مسار رحلات الأسر السودانية أثناء النزوح. استكشف أرشيف المجتمع أو وثّق مسار رحلتك وقصتك.'
-                    : 'Every geotagged photograph preserves a moment along the paths of Sudanese families navigating displacement. Explore the community archive or share your personal journey.'}
+                  {t('explorer.heroDesc')}
                 </p>
                 <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                   <button
@@ -259,7 +258,7 @@ export function MainAppShell({ initialJourneys }: MainAppShellProps) {
                     }}
                   >
                     <Compass size={18} color="var(--cyan-route)" />
-                    <span>{locale === 'ar' ? 'استكشاف الخريطة الجغرافية' : 'Explore Geographic Map'}</span>
+                    <span>{t('explorer.heroExploreMap')}</span>
                   </button>
                 </div>
               </div>
@@ -296,7 +295,7 @@ export function MainAppShell({ initialJourneys }: MainAppShellProps) {
                 }}
               >
                 <Globe size={15} />
-                <span>{locale === 'ar' ? 'قصص المجتمع' : 'Community Stories'}</span>
+                <span>{t('explorer.tabCommunity')}</span>
               </button>
 
               {user && (
@@ -319,7 +318,7 @@ export function MainAppShell({ initialJourneys }: MainAppShellProps) {
                   }}
                 >
                   <User size={15} />
-                  <span>{locale === 'ar' ? 'مساراتي الموثقة' : 'My Journeys'}</span>
+                  <span>{t('explorer.tabMy')}</span>
                   <span
                     style={{
                       fontSize: '11px',
@@ -330,7 +329,7 @@ export function MainAppShell({ initialJourneys }: MainAppShellProps) {
                       fontWeight: 800,
                     }}
                   >
-                    {myJourneysCount}
+                    {formatNumber(myJourneysCount, locale)}
                   </span>
                 </button>
               )}
@@ -354,7 +353,7 @@ export function MainAppShell({ initialJourneys }: MainAppShellProps) {
                 }}
               >
                 <Bookmark size={15} />
-                <span>{locale === 'ar' ? 'المسارات المحفوظة' : 'Bookmarked'}</span>
+                <span>{t('explorer.tabBookmarks')}</span>
                 {bookmarksCount > 0 && (
                   <span
                     style={{
@@ -366,7 +365,7 @@ export function MainAppShell({ initialJourneys }: MainAppShellProps) {
                       fontWeight: 800,
                     }}
                   >
-                    {bookmarksCount}
+                    {formatNumber(bookmarksCount, locale)}
                   </span>
                 )}
               </button>
@@ -406,9 +405,9 @@ export function MainAppShell({ initialJourneys }: MainAppShellProps) {
                   type="text"
                   placeholder={
                     feedScope === 'my'
-                      ? (locale === 'ar' ? 'ابحث في مساراتك الخاصة...' : 'Search within your journeys...')
+                      ? t('explorer.searchMyPlaceholder')
                       : feedScope === 'bookmarks'
-                      ? (locale === 'ar' ? 'ابحث في المسارات المحفوظة...' : 'Search bookmarked journeys...')
+                      ? t('explorer.searchBookmarksPlaceholder')
                       : t('explorer.searchPlaceholder')
                   }
                   value={searchQuery}
@@ -473,7 +472,7 @@ export function MainAppShell({ initialJourneys }: MainAppShellProps) {
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {locale === 'ar' ? 'جميع الفئات' : 'All Categories'}
+                  {t('explorer.allCategories')}
                 </button>
                 {allTags.map((tag) => (
                   <button
@@ -526,15 +525,15 @@ export function MainAppShell({ initialJourneys }: MainAppShellProps) {
                 <BookOpen size={44} color="var(--text-muted)" style={{ margin: '0 auto 1rem' }} />
                 <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
                   {feedScope === 'my' && myJourneysCount === 0
-                    ? (locale === 'ar' ? 'لم تقم بتوثيق أي مسار بعد' : "You haven't documented any journeys yet")
+                    ? t('explorer.noMyJourneysTitle')
                     : t('explorer.noJourneysTitle')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '14px', maxWidth: '440px', margin: '0 auto 1.5rem' }}>
                   {feedScope === 'my' && myJourneysCount === 0
-                    ? (locale === 'ar' ? 'ابدأ بتوثيق مسار رحلتك، ومحطاتها، والذكريات العائلية باستخدام التتبع الجغرافي التفاعلي.' : 'Start documenting your displacement path, milestones, and family memories with interactive GPS tracking.')
+                    ? t('explorer.noMyJourneysDesc')
                     : searchQuery || selectedTag
                     ? t('explorer.noJourneysDesc')
-                    : (locale === 'ar' ? 'كن أول من يوثّق مسار نزوح ويخلّد تاريخ المجتمع.' : 'Be the first to archive a displacement path and preserve community history.')}
+                    : t('explorer.firstJourneyPrompt')}
                 </p>
                 {feedScope === 'my' && myJourneysCount === 0 ? (
                   <button
@@ -631,7 +630,7 @@ export function MainAppShell({ initialJourneys }: MainAppShellProps) {
                 }}
               >
                 <MapPin size={14} color="var(--amber-sand)" />
-                <span>{locale === 'ar' ? `المسارات (${filteredJourneys.length.toLocaleString('ar-SD')})` : `Routes (${filteredJourneys.length})`}</span>
+                <span>{t('explorer.routesCount', { count: formatNumber(filteredJourneys.length, locale) })}</span>
               </button>
             </div>
 
@@ -666,10 +665,10 @@ export function MainAppShell({ initialJourneys }: MainAppShellProps) {
               >
                 <div>
                   <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#ffffff', marginBottom: '2px' }}>
-                    {locale === 'ar' ? `المسارات النشطة (${filteredJourneys.length.toLocaleString('ar-SD')})` : `Active Routes (${filteredJourneys.length})`}
+                    {t('explorer.activeRoutesCount', { count: formatNumber(filteredJourneys.length, locale) })}
                   </h3>
                   <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    {locale === 'ar' ? 'اختر مساراً لاستعراض محطاته المصورة.' : 'Select a route to view photo milestones.'}
+                    {t('explorer.selectRouteTip')}
                   </p>
                 </div>
                 <button
@@ -717,7 +716,7 @@ export function MainAppShell({ initialJourneys }: MainAppShellProps) {
                         <span>{j.destination}</span>
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--amber-sand)', marginTop: '3px' }}>
-                        {locale === 'ar' ? j.distanceKm.toLocaleString('ar-SD') : j.distanceKm.toLocaleString('en-US')} {t('common.km')} • {locale === 'ar' ? j.photos.length.toLocaleString('ar-SD') : j.photos.length.toLocaleString('en-US')} {t('common.photos')}
+                        {formatNumber(j.distanceKm, locale)} {t('common.km')} • {formatNumber(j.photos.length, locale)} {t('common.photos')}
                       </div>
                       {isSelected && (
                         <Link

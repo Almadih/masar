@@ -9,6 +9,7 @@ import { useJourney } from '../context/JourneyContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../context/ToastContext';
 import { DEFAULT_GENERIC_AVATAR } from '../utils/constants';
+import { formatDistance, formatPhotosCount } from '../utils/i18nHelpers';
 import {
   MapPin,
   Navigation,
@@ -181,7 +182,7 @@ export const JourneyCard: React.FC<JourneyCardProps> = ({ journey, onSelect }) =
             }}
           >
             <Navigation size={13} className="rtl-mirror" />
-            {locale === 'ar' ? journey.distanceKm.toLocaleString('ar-SD') : journey.distanceKm.toLocaleString('en-US')} {t('common.km')}
+            {formatDistance(journey.distanceKm, locale, t)}
           </div>
 
           <button
@@ -223,7 +224,7 @@ export const JourneyCard: React.FC<JourneyCardProps> = ({ journey, onSelect }) =
             }}
           >
             <Camera size={13} />
-            {locale === 'ar' ? journey.photos.length.toLocaleString('ar-SD') : journey.photos.length.toLocaleString('en-US')} {t('common.photos')}
+            {formatPhotosCount(journey.photos.length, locale, t)}
           </div>
 
           {!journey.isPublic && (
@@ -305,7 +306,7 @@ export const JourneyCard: React.FC<JourneyCardProps> = ({ journey, onSelect }) =
                 {journey.authorName}
                 {isAuthor && (
                   <span style={{ fontSize: '10px', background: 'rgba(56, 189, 248, 0.15)', color: 'var(--cyan-route)', padding: '1px 5px', borderRadius: '4px' }}>
-                    {locale === 'ar' ? 'أنت' : 'You'}
+                    {t('common.you')}
                   </span>
                 )}
               </span>
