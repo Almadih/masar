@@ -1,0 +1,96 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  role          String?   @default("USER") // "USER" | "ADMIN"
+  isAnonymous   Boolean?  @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+}
+
+model Journey {
+  id                 String       @id @default(uuid())
+  title              String
+  summary            String
+  authorName         String
+  authorId           String
+  authorAvatar       String?
+  startLocation      String
+  destination        String
+  startDate          String
+  endDate            String?
+  distanceKm         Float        @default(0)
+  createdAt          String
+  isPublic           Boolean      @default(true)
+  status             String       @default("APPROVED") // "APPROVED" | "PENDING" | "FLAGGED"
+  tags               String       @default("[]")
+  familyMembersCount Int          @default(1)
+  photos             PhotoPoint[]
+}
+
+model PhotoPoint {
+  id           String  @id @default(uuid())
+  journeyId    String
+  journey      Journey @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  url          String
+  filename     String
+  latitude     Float
+  longitude    Float
+  locationName String
+  timestamp    String
+  caption      String  @default("")
+  notes        String?
+  hasExif      Boolean @default(true)
+  orderIndex   Int
+}

@@ -1,0 +1,14 @@
+// Self-destroying service worker to clean up lingering PWA workers from previous Vite builds
+self.addEventListener('install', () => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(keys.map((key) => caches.delete(key)));
+    }).then(() => {
+      return self.registration.unregister();
+    })
+  );
+});
