@@ -1,0 +1,21 @@
+{
+  "name": "MASAR - مسار",
+  "short_name": "MASAR",
+  "description": "Sudan Displacement Archival & Mapping Platform - منصة أرشفة وخريطة رحلات النزوح السودانية",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B0F19",
+  "theme_color": "#0B0F19",
+  "icons": [
+    {
+      "src": "/logo.jpg",
+      "sizes": "192x192 512x512",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -42,9 +42,23 @@ export async function generateMetadata({ params }: EditJourneyPageProps): Promis
     };
   }
 
+  const title = `تعديل: ${journey.title}`;
+  const description = `Edit milestones, photos, and route details for ${journey.title}.`;
+
   return {
-    title: `تعديل: ${journey.title} | MASAR (مسار)`,
-    description: `Edit milestones, photos, and route details for ${journey.title}.`,
+    title,
+    description,
+    openGraph: {
+      title: `${title} | MASAR (مسار)`,
+      description,
+      images: [{ url: '/logo.jpg', width: 1200, height: 630, alt: journey.title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${title} | MASAR (مسار)`,
+      description,
+      images: ['/logo.jpg'],
+    },
   };
 }
 

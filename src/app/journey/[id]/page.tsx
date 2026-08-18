@@ -52,9 +52,10 @@ export async function generateMetadata({ params }: JourneyPageProps): Promise<Me
     };
   }
 
-  const coverPhoto = journey.waypoints?.[0]?.photos?.[0];
+  const coverPhoto = journey.waypoints?.find((w) => w.photos && w.photos.length > 0)?.photos?.[0];
+  const imageUrl = coverPhoto?.url || '/logo.jpg';
   const pageTitle = `${journey.title} | MASAR (مسار)`;
-  const description = `${journey.summary.slice(0, 160)} — Path from ${journey.startLocation} to ${journey.destination} (${journey.distanceKm} km).`;
+  const description = `${journey.summary.slice(0, 160)} — من ${journey.startLocation} إلى ${journey.destination} (${journey.distanceKm} كم).`;
 
   return {
     title: pageTitle,
@@ -63,22 +64,23 @@ export async function generateMetadata({ params }: JourneyPageProps): Promise<Me
       title: pageTitle,
       description: description,
       type: 'article',
-      images: coverPhoto?.url
-        ? [
-            {
-              url: coverPhoto.url,
-              width: 1200,
-              height: 630,
-              alt: journey.title,
-            },
-          ]
-        : [],
+      url: `/journey/${journey.id}`,
+      siteName: 'MASAR (مسار)',
+      locale: 'ar_SD',
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: journey.title,
+        },
+      ],
     },
     twitter: {
       card: 'summary_large_image',
       title: pageTitle,
       description: description,
-      images: coverPhoto?.url ? [coverPhoto.url] : [],
+      images: [imageUrl],
     },
   };
 }

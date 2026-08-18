@@ -1,14 +1,93 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import '@/index.css';
 import '@/App.css';
 import 'leaflet/dist/leaflet.css';
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_APP_URL ||
+  process.env.BETTER_AUTH_URL ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://masar-sudan.org');
+
+export const viewport: Viewport = {
+  themeColor: '#0B0F19',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export const metadata: Metadata = {
-  title: 'MASAR - Sudan Displacement Archival & Mapping Platform',
-  description: "Map Your Path. Share Your Story. Honor the Journey. Sudan Displacement Archival & Mapping Platform.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: 'مسار - منصة أرشفة وخريطة رحلات النزوح السودانية | MASAR',
+    template: '%s | MASAR (مسار)',
+  },
+  description:
+    'منصة تفاعلية توثق مسارات وذكريات النزوح الإنساني في السودان عبر الخرائط التفاعلية والصور المؤرخة لحفظ الذاكرة الوطنية والتكاتف المجتمعي.',
+  applicationName: 'MASAR (مسار)',
+  authors: [{ name: 'MASAR Platform Team' }],
+  generator: 'Next.js',
+  keywords: [
+    'مسار',
+    'السودان',
+    'نزوح السودان',
+    'توثيق النزوح',
+    'خريطة النزوح السوداني',
+    'حرب السودان',
+    'MASAR',
+    'Sudan Displacement',
+    'Sudan Photo Archive',
+    'Sudan Mapping Platform',
+    'Sudan War Stories',
+    'Sudanese Resilience',
+  ],
+  creator: 'MASAR',
+  publisher: 'MASAR Archive',
   icons: {
-    icon: '/logo.jpg',
+    icon: [
+      { url: '/logo.jpg', sizes: 'any' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
     apple: '/logo.jpg',
+    shortcut: '/logo.jpg',
+  },
+  manifest: '/manifest.json',
+  openGraph: {
+    type: 'website',
+    locale: 'ar_SD',
+    alternateLocale: ['en_US'],
+    url: '/',
+    siteName: 'MASAR (مسار)',
+    title: 'مسار - منصة أرشفة وخريطة رحلات النزوح السودانية | MASAR',
+    description:
+      'منصة تفاعلية توثق مسارات وذكريات النزوح الإنساني في السودان عبر الخرائط التفاعلية والصور المؤرخة لحفظ الذاكرة الوطنية.',
+    images: [
+      {
+        url: '/logo.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'MASAR (مسار) - Sudan Displacement Archival & Mapping Platform',
+        type: 'image/jpeg',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'مسار - منصة أرشفة وخريطة رحلات النزوح السودانية | MASAR',
+    description:
+      'منصة تفاعلية توثق مسارات وذكريات النزوح الإنساني في السودان عبر الخرائط التفاعلية والصور المؤرخة لحفظ الذاكرة الوطنية.',
+    images: ['/logo.jpg'],
+    creator: '@masar_sudan',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
 };
 
