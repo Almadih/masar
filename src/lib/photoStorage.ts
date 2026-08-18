@@ -1,18 +1,9 @@
-import path from 'path';
-import fs from 'fs/promises';
-import { existsSync } from 'fs';
-
-const STORAGE_DIR = path.join(process.cwd(), 'storage', 'photos');
-
-/**
- * Ensures the physical storage directory exists on disk.
- */
-export async function ensureStorageDir(): Promise<string> {
-  if (!existsSync(STORAGE_DIR)) {
-    await fs.mkdir(STORAGE_DIR, { recursive: true });
-  }
-  return STORAGE_DIR;
-}
+import {
+  uploadToR2,
+  getFromR2,
+  deleteFromR2,
+  deleteManyFromR2,
+} from './r2';
 
 /**
  * Maps common image MIME types to standard file extensions.
@@ -68,7 +59,14 @@ export function getMimeFromExtension(ext: string): string {
 }
 
 /**
- * Saves binary photo buffer to server filesystem in storage/photos/<photoId>.<ext>.
+ * Generates the canonical storage object key for Cloudflare R2.
+ */
+export function getR2Key(photoId: string, ext: string = 'jpg'): string {
+  return `photos/${photoId}.${ext}`;
+}
+
+/**
+ * Saves binary photo buffer directly to Cloudflare R2 bucket.
  * Returns the protected route handler URL (/api/photos/<photoId>).
  */
 export async function savePhotoBuffer(
@@ -76,13 +74,12 @@ export async function savePhotoBuffer(
   buffer: Buffer | Uint8Array,
   originalFilename?: string,
   mimeType?: string
-): Promise<{ url: string; filename: string; filePath: string }> {
-  await ensureStorageDir();
-
+): Promise<{ url: string; filename: string; key: string }> {
   // Determine file extension
   let ext = 'jpg';
   if (originalFilename && originalFilename.includes('.')) {
-    const extractedExt = path.extname(originalFilename).replace('.', '').toLowerCase();
+    const parts = originalFilename.split('.');
+    const extractedExt = parts[parts.length - 1].toLowerCase();
     if (extractedExt && extractedExt.length <= 5) {
       ext = extractedExt;
     }
@@ -90,29 +87,28 @@ export async function savePhotoBuffer(
     ext = getExtensionFromMime(mimeType);
   }
 
-  // Remove existing file variations for this photoId before saving
-  await deletePhotoFile(photoId);
-
   const safeFilename = `${photoId}.${ext}`;
-  const filePath = path.join(STORAGE_DIR, safeFilename);
+  const r2Key = getR2Key(photoId, ext);
+  const resolvedMime = mimeType || getMimeFromExtension(ext);
+  const nodeBuffer = Buffer.from(buffer);
 
-  await fs.writeFile(filePath, Buffer.from(buffer));
+  await uploadToR2(r2Key, nodeBuffer, resolvedMime);
 
   return {
     url: `/api/photos/${photoId}`,
     filename: safeFilename,
-    filePath,
+    key: r2Key,
   };
 }
 
 /**
- * Decodes and saves a Base64 data URL to the filesystem.
+ * Decodes and saves a Base64 data URL to Cloudflare R2.
  */
 export async function saveBase64Photo(
   photoId: string,
   base64String: string,
   originalFilename?: string
-): Promise<{ url: string; filename: string; filePath: string }> {
+): Promise<{ url: string; filename: string; key: string }> {
   let mimeType = 'image/jpeg';
   let data = base64String;
 
@@ -127,68 +123,52 @@ export async function saveBase64Photo(
 }
 
 /**
- * Locates and reads a photo file from disk by photoId.
+ * Locates and reads a photo file directly from Cloudflare R2 bucket.
  */
 export async function getPhotoFile(photoId: string): Promise<{
   buffer: Buffer;
   mimeType: string;
-  filePath: string;
 } | null> {
-  await ensureStorageDir();
+  const possibleExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif', 'heic', 'svg'];
 
-  try {
-    const files = await fs.readdir(STORAGE_DIR);
-    // Find file starting with photoId + "." (e.g. photo-101.jpg, photo-101.png)
-    const matchingFile = files.find((f) => {
-      const parsed = path.parse(f);
-      return parsed.name === photoId || f === photoId;
-    });
-
-    if (!matchingFile) {
-      return null;
+  for (const ext of possibleExtensions) {
+    const r2Key = getR2Key(photoId, ext);
+    const r2Result = await getFromR2(r2Key);
+    if (r2Result) {
+      return {
+        buffer: r2Result.buffer,
+        mimeType: r2Result.contentType || getMimeFromExtension(ext),
+      };
     }
-
-    const filePath = path.join(STORAGE_DIR, matchingFile);
-    const ext = path.extname(matchingFile);
-    const mimeType = getMimeFromExtension(ext);
-    const buffer = await fs.readFile(filePath);
-
-    return {
-      buffer,
-      mimeType,
-      filePath,
-    };
-  } catch (error) {
-    console.error(`Error reading photo file for ${photoId}:`, error);
-    return null;
   }
+
+  return null;
 }
 
 /**
- * Deletes any existing file for a given photoId.
+ * Deletes a photo from Cloudflare R2.
  */
 export async function deletePhotoFile(photoId: string): Promise<void> {
-  if (!existsSync(STORAGE_DIR)) return;
-
-  try {
-    const files = await fs.readdir(STORAGE_DIR);
-    const matchingFiles = files.filter((f) => {
-      const parsed = path.parse(f);
-      return parsed.name === photoId || f === photoId;
-    });
-
-    for (const file of matchingFiles) {
-      const fullPath = path.join(STORAGE_DIR, file);
-      await fs.unlink(fullPath).catch(() => {});
-    }
-  } catch (error) {
-    console.error(`Error deleting photo file for ${photoId}:`, error);
+  const possibleExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif', 'heic', 'svg'];
+  for (const ext of possibleExtensions) {
+    await deleteFromR2(getR2Key(photoId, ext));
   }
 }
 
 /**
- * Bulk deletes photo files for multiple photoIds.
+ * Bulk deletes photos from Cloudflare R2.
  */
 export async function deletePhotoFiles(photoIds: string[]): Promise<void> {
-  await Promise.all(photoIds.map((id) => deletePhotoFile(id)));
+  if (!photoIds || photoIds.length === 0) return;
+
+  const possibleExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif', 'heic'];
+  const r2Keys: string[] = [];
+
+  for (const photoId of photoIds) {
+    for (const ext of possibleExtensions) {
+      r2Keys.push(getR2Key(photoId, ext));
+    }
+  }
+
+  await deleteManyFromR2(r2Keys);
 }

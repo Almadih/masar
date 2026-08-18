@@ -112,3 +112,5 @@ model WaypointPhoto {
   @@index([waypointId])
 }
 
+
+
