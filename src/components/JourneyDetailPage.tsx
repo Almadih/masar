@@ -64,7 +64,7 @@ interface JourneyDetailPageProps {
 export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: initialJourney }) => {
   const { user, openAuthModal } = useAuth();
   const { journeys, toggleJourneyVisibility } = useJourney();
-  const { locale, t, isRTL } = useLanguage();
+  const { locale, setLocale, t, isRTL } = useLanguage();
   const { showToast } = useToast();
 
   const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
@@ -291,20 +291,25 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
           borderBottom: '1px solid var(--glass-border)',
-          padding: '0 clamp(0.75rem, 3vw, 1.5rem)',
+          padding: '0 clamp(0.5rem, 2.5vw, 1.5rem)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          gap: '8px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Left Side: Back button and Brand */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           <Link
             href="/"
+            title={t('journeyDetail.backToJourneys')}
+            aria-label={t('journeyDetail.backToJourneys')}
             style={{
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '6px',
-              padding: '6px 12px',
+              padding: '7px 12px',
               borderRadius: 'var(--radius-full)',
               background: 'rgba(255, 255, 255, 0.06)',
               border: '1px solid var(--glass-border)',
@@ -313,19 +318,22 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
               fontWeight: 600,
               textDecoration: 'none',
               transition: 'all 0.2s ease',
+              flexShrink: 0,
             }}
           >
             <ArrowLeft size={16} className="rtl-mirror" />
-            <span>{t('journeyDetail.backToJourneys')}</span>
+            <span className="desktop-only">{t('journeyDetail.backToJourneys')}</span>
           </Link>
 
           <Link
             href="/"
+            title="MASAR"
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
               textDecoration: 'none',
+              flexShrink: 0,
             }}
           >
             <div
@@ -355,8 +363,34 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
           </Link>
         </div>
 
-        {/* Action Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* Right Side: Action Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap' }}>
+          {/* Language Switcher */}
+          <button
+            onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}
+            title={locale === 'ar' ? 'Switch to English' : 'التحويل إلى العربية'}
+            aria-label="Toggle language"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '5px',
+              padding: '7px 11px',
+              borderRadius: 'var(--radius-full)',
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid var(--glass-border)',
+              color: 'var(--amber-sand)',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              flexShrink: 0,
+            }}
+          >
+            <Globe size={14} />
+            <span className="desktop-only">{locale === 'ar' ? 'English' : 'العربية'}</span>
+          </button>
+
           {isAdmin && (
             <Link
               href="/admin"
@@ -373,6 +407,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                 fontSize: '12px',
                 fontWeight: 700,
                 textDecoration: 'none',
+                flexShrink: 0,
               }}
             >
               <ShieldCheck size={14} />
@@ -384,11 +419,13 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
           <button
             onClick={handleToggleBookmark}
             title={isBookmarked ? t('journeyDetail.removeSavedTitle') : t('journeyDetail.saveJourneyTitle')}
+            aria-label={isBookmarked ? t('journeyDetail.removeSavedTitle') : t('journeyDetail.saveJourneyTitle')}
             style={{
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '6px',
-              padding: '7px 14px',
+              padding: '7px 11px',
               borderRadius: 'var(--radius-full)',
               background: isBookmarked ? 'rgba(230, 167, 65, 0.2)' : 'rgba(255, 255, 255, 0.05)',
               border: isBookmarked ? '1px solid var(--amber-sand)' : '1px solid var(--glass-border)',
@@ -397,9 +434,10 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
               fontWeight: 600,
               cursor: 'pointer',
               transition: 'all 0.2s ease',
+              flexShrink: 0,
             }}
           >
-            <Bookmark size={14} fill={isBookmarked ? 'currentColor' : 'none'} />
+            <Bookmark size={15} fill={isBookmarked ? 'currentColor' : 'none'} />
             <span className="desktop-only">{isBookmarked ? t('journeyDetail.savedNotice') : t('journeyDetail.saveNotice')}</span>
           </button>
 
@@ -408,11 +446,13 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
               <button
                 onClick={handleToggleVisibility}
                 title={journey.isPublic ? t('uploader.makePrivate') : t('uploader.makePublic')}
+                aria-label={journey.isPublic ? t('uploader.makePrivate') : t('uploader.makePublic')}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
+                  justifyContent: 'center',
                   gap: '6px',
-                  padding: '7px 14px',
+                  padding: '7px 11px',
                   borderRadius: 'var(--radius-full)',
                   background: journey.isPublic ? 'rgba(255, 255, 255, 0.05)' : 'rgba(239, 68, 68, 0.15)',
                   border: `1px solid ${journey.isPublic ? 'var(--glass-border)' : 'rgba(239, 68, 68, 0.4)'}`,
@@ -420,19 +460,24 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                   fontSize: '12px',
                   fontWeight: 600,
                   cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  flexShrink: 0,
                 }}
               >
                 {journey.isPublic ? <Lock size={14} /> : <Globe size={14} />}
-                <span>{journey.isPublic ? t('uploader.makePrivate') : t('uploader.makePublic')}</span>
+                <span className="desktop-only">{journey.isPublic ? t('uploader.makePrivate') : t('uploader.makePublic')}</span>
               </button>
 
               <Link
                 href={`/journey/${journey.id}/edit`}
+                title={t('common.edit')}
+                aria-label={t('common.edit')}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
+                  justifyContent: 'center',
                   gap: '6px',
-                  padding: '7px 14px',
+                  padding: '7px 11px',
                   borderRadius: 'var(--radius-full)',
                   background: 'rgba(56, 189, 248, 0.15)',
                   border: '1px solid rgba(56, 189, 248, 0.4)',
@@ -441,23 +486,28 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                   fontWeight: 700,
                   cursor: 'pointer',
                   textDecoration: 'none',
+                  transition: 'all 0.2s ease',
+                  flexShrink: 0,
                 }}
               >
                 <Edit3 size={14} />
-                <span>{t('common.edit')}</span>
+                <span className="desktop-only">{t('common.edit')}</span>
               </Link>
             </>
           )}
 
           {/* Share Dropdown Button */}
-          <div ref={shareMenuRef} style={{ position: 'relative' }}>
+          <div ref={shareMenuRef} style={{ position: 'relative', flexShrink: 0 }}>
             <button
               onClick={() => setShowShareMenu(prev => !prev)}
+              title={t('journeyDetail.shareStory')}
+              aria-label={t('journeyDetail.shareStory')}
               style={{
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '6px',
-                padding: '7px 14px',
+                padding: '7px 12px',
                 borderRadius: 'var(--radius-full)',
                 background: showShareMenu ? 'rgba(217, 107, 67, 0.3)' : copiedLink ? 'rgba(34, 197, 94, 0.2)' : 'rgba(217, 107, 67, 0.2)',
                 border: copiedLink ? '1px solid #22c55e' : '1px solid var(--primary-terracotta)',
@@ -466,17 +516,18 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                 fontWeight: 700,
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
+                flexShrink: 0,
               }}
             >
               {copiedLink ? (
                 <>
                   <Check size={15} />
-                  <span>{t('journeyDetail.shareCopied')}</span>
+                  <span className="desktop-only">{t('journeyDetail.shareCopied')}</span>
                 </>
               ) : (
                 <>
                   <Share2 size={15} />
-                  <span>{t('journeyDetail.shareStory')}</span>
+                  <span className="desktop-only">{t('journeyDetail.shareStory')}</span>
                 </>
               )}
             </button>
@@ -490,6 +541,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                   insetInlineEnd: 0,
                   zIndex: 1200,
                   width: '240px',
+                  maxWidth: 'calc(100vw - 24px)',
                   background: 'rgba(19, 27, 46, 0.98)',
                   backdropFilter: 'blur(20px)',
                   WebkitBackdropFilter: 'blur(20px)',
@@ -623,20 +675,43 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
             )}
           </div>
 
-          {!user && (
+          {/* User Auth Profile or Sign In */}
+          {user ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+              <img
+                src={user.avatar || DEFAULT_GENERIC_AVATAR}
+                alt={user.name}
+                title={user.name}
+                style={{
+                  width: '30px',
+                  height: '30px',
+                  borderRadius: '50%',
+                  border: isAdmin ? '2px solid var(--primary-terracotta)' : '2px solid var(--amber-sand)',
+                  objectFit: 'cover',
+                }}
+              />
+            </div>
+          ) : (
             <button
               onClick={openAuthModal}
+              title={t('navbar.signIn')}
               style={{
-                padding: '6px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '6px 11px',
                 borderRadius: 'var(--radius-full)',
                 border: '1px solid var(--glass-border)',
                 background: 'rgba(255, 255, 255, 0.05)',
                 color: 'var(--text-main)',
                 fontSize: '12px',
                 fontWeight: 600,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
               }}
             >
-              {t('navbar.signIn')}
+              <span>{t('navbar.signIn')}</span>
             </button>
           )}
         </div>

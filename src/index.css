@@ -350,6 +350,98 @@ input[type="datetime-local"], input[type="date"], input[type="time"] {
   button, input, select, textarea {
     font-size: 16px; /* Prevents auto-zoom on iOS */
   }
+
+  /* Journey Form Edge-to-Edge Mobile Layout */
+  .journey-form-main {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0.75rem 0 !important;
+    padding-bottom: 5rem !important;
+  }
+
+  .journey-form-hero {
+    padding: 0 1rem !important;
+    margin-bottom: 1.25rem !important;
+  }
+
+  .journey-form-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.25rem !important;
+    width: 100% !important;
+  }
+
+  .journey-form-sidebar {
+    position: static !important;
+    gap: 1.25rem !important;
+    width: 100% !important;
+  }
+
+  .journey-form-panel,
+  .journey-form-panel-compact {
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-inline: none !important;
+    padding: 1.25rem 1rem !important;
+    width: 100% !important;
+  }
+
+  .journey-waypoint-card {
+    padding: 1rem 0.75rem !important;
+  }
+}
+
+/* Journey Form Desktop Layout Defaults */
+.journey-form-main {
+  max-width: 90%;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  width: 100%;
+}
+
+.journey-form-hero {
+  margin-bottom: 2rem;
+}
+
+.journey-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 580px), 1fr));
+  gap: 2rem;
+  align-items: start;
+}
+
+.journey-form-sidebar {
+  position: sticky;
+  top: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.journey-form-panel {
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
+  border: 1px solid var(--glass-border);
+  background: var(--bg-card);
+}
+
+.journey-form-panel-compact {
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  border: 1px solid var(--glass-border);
+  background: var(--bg-card);
+}
+
+.journey-waypoint-card {
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  border: 1px solid var(--glass-border);
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
 }
 
 /* Toast and Modal Animations */

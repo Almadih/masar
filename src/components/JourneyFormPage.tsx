@@ -54,7 +54,7 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
   const router = useRouter();
   const { user } = useAuth();
   const { saveNewOrUpdatedJourney } = useJourney();
-  const { t, locale, isRTL } = useLanguage();
+  const { t, locale, setLocale, isRTL } = useLanguage();
   const { showToast, confirm } = useToast();
 
   const [title, setTitle] = useState(initialJourney?.title || '');
@@ -509,93 +509,146 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
     <div style={{ minHeight: '100vh', background: 'var(--bg-main)', color: 'var(--text-main)', paddingBottom: '5rem' }}>
       {/* Top Sticky Action Bar */}
       <header
-        className="glass-panel"
         style={{
           position: 'sticky',
           top: 0,
-          zIndex: 100,
-          background: 'rgba(11, 15, 25, 0.85)',
+          zIndex: 1100,
+          height: '64px',
+          background: 'rgba(11, 15, 25, 0.94)',
           backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
           borderBottom: '1px solid var(--glass-border)',
-          padding: '0.85rem 1.5rem',
+          padding: '0 clamp(0.5rem, 2.5vw, 1.5rem)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '8px',
         }}
       >
         <div
           style={{
             maxWidth: '1360px',
+            width: '100%',
             margin: '0 auto',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '1rem',
+            gap: '8px',
           }}
         >
-          {/* Back Button */}
-          <Link
-            href={mode === 'edit' && initialJourney ? `/journey/${initialJourney.id}` : '/'}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              color: 'var(--text-muted)',
-              fontSize: '13px',
-              fontWeight: 600,
-              textDecoration: 'none',
-              padding: '6px 12px',
-              borderRadius: 'var(--radius-md)',
-              background: 'rgba(255, 255, 255, 0.04)',
-              border: '1px solid var(--glass-border)',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            {isRTL ? <ArrowRight size={16} /> : <ArrowLeft size={16} />}
-            <span>{mode === 'edit' ? t('uploader.backToJourney') : t('uploader.backToExplore')}</span>
-          </Link>
-
-          {/* Center Brand Badge */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div
+          {/* Left Side: Back Button & Brand */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            <Link
+              href={mode === 'edit' && initialJourney ? `/journey/${initialJourney.id}` : '/'}
+              title={mode === 'edit' ? t('uploader.backToJourney') : t('uploader.backToExplore')}
+              aria-label={mode === 'edit' ? t('uploader.backToJourney') : t('uploader.backToExplore')}
               style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                overflow: 'hidden',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: 'var(--shadow-glow)',
+                gap: '6px',
+                padding: '7px 12px',
+                borderRadius: 'var(--radius-full)',
+                background: 'rgba(255, 255, 255, 0.06)',
                 border: '1px solid var(--glass-border)',
-                background: 'rgba(15, 22, 38, 0.6)',
-                flexShrink: 0,
-              }}
-            >
-              <img
-                src="/logo.jpg"
-                alt="MASAR (مسار)"
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            </div>
-            <span style={{ fontWeight: 800, fontSize: '15px', letterSpacing: '0.5px' }}>
-              <span className="gradient-text">{t('common.appName')}</span>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginInlineStart: '6px', fontWeight: 500 }}>
-                {mode === 'create' ? t('uploader.modalTitleCreate') : t('uploader.modalTitleEdit')}
-              </span>
-            </span>
-          </div>
-
-          {/* Quick Header Actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Link
-              href={mode === 'edit' && initialJourney ? `/journey/${initialJourney.id}` : '/'}
-              style={{
-                padding: '8px 14px',
-                borderRadius: 'var(--radius-md)',
-                background: 'transparent',
-                border: '1px solid var(--glass-border)',
-                color: 'var(--text-muted)',
+                color: 'var(--text-main)',
                 fontSize: '13px',
                 fontWeight: 600,
                 textDecoration: 'none',
+                transition: 'all 0.2s ease',
+                flexShrink: 0,
+              }}
+            >
+              <ArrowLeft size={16} className="rtl-mirror" />
+              <span className="desktop-only">
+                {mode === 'edit' ? t('uploader.backToJourney') : t('uploader.backToExplore')}
+              </span>
+            </Link>
+
+            <Link
+              href="/"
+              title="MASAR"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                textDecoration: 'none',
+                flexShrink: 0,
+              }}
+            >
+              <div
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: 'var(--shadow-glow)',
+                  border: '1px solid var(--glass-border)',
+                  background: 'rgba(15, 22, 38, 0.6)',
+                  flexShrink: 0,
+                }}
+              >
+                <img
+                  src="/logo.jpg"
+                  alt="MASAR (مسار)"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              </div>
+              <span className="desktop-only" style={{ fontWeight: 800, fontSize: '15px', letterSpacing: '0.5px', color: '#ffffff' }}>
+                <span className="gradient-text">{t('common.appName')}</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginInlineStart: '6px', fontWeight: 500 }}>
+                  {mode === 'create' ? t('uploader.modalTitleCreate') : t('uploader.modalTitleEdit')}
+                </span>
+              </span>
+            </Link>
+          </div>
+
+          {/* Right Side: Quick Actions */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap' }}>
+            {/* Language Switcher */}
+            <button
+              type="button"
+              onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}
+              title={locale === 'ar' ? 'Switch to English' : 'التحويل إلى العربية'}
+              aria-label="Toggle language"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '5px',
+                padding: '7px 11px',
+                borderRadius: 'var(--radius-full)',
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: '1px solid var(--glass-border)',
+                color: 'var(--amber-sand)',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                flexShrink: 0,
+              }}
+            >
+              <Globe size={14} />
+              <span className="desktop-only">{locale === 'ar' ? 'English' : 'العربية'}</span>
+            </button>
+
+            <Link
+              href={mode === 'edit' && initialJourney ? `/journey/${initialJourney.id}` : '/'}
+              className="desktop-only"
+              style={{
+                padding: '7px 12px',
+                borderRadius: 'var(--radius-full)',
+                background: 'transparent',
+                border: '1px solid var(--glass-border)',
+                color: 'var(--text-muted)',
+                fontSize: '12px',
+                fontWeight: 600,
+                textDecoration: 'none',
+                flexShrink: 0,
+                transition: 'all 0.2s ease',
               }}
             >
               {t('common.cancel')}
@@ -605,28 +658,38 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
               onClick={handleSaveJourney}
               disabled={isSaving}
               style={{
-                padding: '8px 20px',
-                borderRadius: 'var(--radius-md)',
+                padding: '7px 14px',
+                borderRadius: 'var(--radius-full)',
                 background: 'linear-gradient(135deg, var(--primary-terracotta), var(--amber-sand))',
                 border: 'none',
                 color: '#ffffff',
-                fontSize: '13px',
+                fontSize: '12px',
                 fontWeight: 700,
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
+                justifyContent: 'center',
+                gap: '6px',
                 cursor: isSaving ? 'not-allowed' : 'pointer',
                 boxShadow: 'var(--shadow-glow)',
                 opacity: isSaving ? 0.7 : 1,
+                transition: 'all 0.2s ease',
+                flexShrink: 0,
               }}
             >
               <Save size={15} />
-              <span>
+              <span className="desktop-only">
                 {isSaving
                   ? t('uploader.savingJourney')
                   : mode === 'create'
                     ? t('uploader.publishBtn')
                     : t('uploader.saveChangesBtn')}
+              </span>
+              <span className="mobile-only">
+                {isSaving
+                  ? t('common.loading')
+                  : mode === 'create'
+                    ? (locale === 'ar' ? 'نشر' : 'Publish')
+                    : t('common.save')}
               </span>
             </button>
           </div>
@@ -634,9 +697,9 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
       </header>
 
       {/* Main Container */}
-      <main style={{ maxWidth: '90%', margin: '0 auto', padding: '2rem 1.5rem' }}>
+      <main className="journey-form-main">
         {/* Page Hero Header */}
-        <div style={{ marginBottom: '2rem' }}>
+        <div className="journey-form-hero">
           <div
             style={{
               display: 'inline-flex',
@@ -681,26 +744,11 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
         </div>
 
         {/* 2-Column Responsive Layout: Left Form + Right Live Route Preview */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 580px), 1fr))',
-            gap: '2rem',
-            alignItems: 'start',
-          }}
-        >
+        <div className="journey-form-grid">
           {/* Left Column: Form Details & Waypoint Milestone Studio */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem', width: '100%' }}>
             {/* Section 1: General Details */}
-            <div
-              className="glass-panel"
-              style={{
-                borderRadius: 'var(--radius-lg)',
-                padding: '1.75rem',
-                border: '1px solid var(--glass-border)',
-                background: 'var(--bg-card)',
-              }}
-            >
+            <div className="glass-panel journey-form-panel">
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.25rem' }}>
                 <div
                   style={{
@@ -878,15 +926,7 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
             </div>
 
             {/* Section 2: Waypoint Milestone Studio */}
-            <div
-              className="glass-panel"
-              style={{
-                borderRadius: 'var(--radius-lg)',
-                padding: '1.75rem',
-                border: '1px solid var(--glass-border)',
-                background: 'var(--bg-card)',
-              }}
-            >
+            <div className="glass-panel journey-form-panel">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <div
@@ -1047,16 +1087,10 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
                     return (
                       <div
                         key={waypoint.id || wIdx}
-                        className="glass-panel"
+                        className="glass-panel journey-waypoint-card"
                         style={{
-                          borderRadius: 'var(--radius-md)',
-                          padding: '1.25rem',
                           background: isActive ? 'rgba(21, 31, 54, 0.9)' : 'rgba(15, 22, 38, 0.7)',
                           border: isActive ? '1px solid var(--cyan-route)' : '1px solid var(--glass-border)',
-                          transition: 'all 0.2s ease',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '1.25rem',
                         }}
                         onMouseEnter={() => setActiveWaypointIndex(wIdx)}
                       >
@@ -1300,7 +1334,7 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
                               {t('uploader.noPhotosInWaypoint')}
                             </div>
                           ) : (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px' }}>
                               {waypoint.photos.map((photo, pIdx) => {
                                 const isCover = pIdx === 0;
 
@@ -1418,25 +1452,9 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
           </div>
 
           {/* Right Column: Live Route Preview Map & Summary Sidebar */}
-          <div
-            style={{
-              position: 'sticky',
-              top: '80px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '1.5rem',
-            }}
-          >
+          <div className="journey-form-sidebar">
             {/* Live Stats Summary Card */}
-            <div
-              className="glass-panel"
-              style={{
-                borderRadius: 'var(--radius-lg)',
-                padding: '1.5rem',
-                border: '1px solid var(--glass-border)',
-                background: 'var(--bg-card)',
-              }}
-            >
+            <div className="glass-panel journey-form-panel-compact">
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.25rem' }}>
                 <div
                   style={{
@@ -1521,18 +1539,7 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
             </div>
 
             {/* Bottom Actions Card */}
-            <div
-              className="glass-panel"
-              style={{
-                borderRadius: 'var(--radius-lg)',
-                padding: '1.25rem',
-                border: '1px solid var(--glass-border)',
-                background: 'var(--bg-card)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '10px',
-              }}
-            >
+            <div className="glass-panel journey-form-panel" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <button
                 type="button"
                 onClick={handleSaveJourney}
