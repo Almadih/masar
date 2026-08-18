@@ -68,10 +68,19 @@ export const metadata: Metadata = {
       'منصة تفاعلية توثق مسارات وذكريات النزوح الإنساني في السودان عبر الخرائط التفاعلية والصور المؤرخة لحفظ الذاكرة الوطنية.',
     images: [
       {
-        url: '/logo.jpg',
+        url: '/og-image.jpg',
+        secureUrl: '/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'MASAR (مسار) - Sudan Displacement Archival & Mapping Platform',
+        type: 'image/jpeg',
+      },
+      {
+        url: '/logo.jpg',
+        secureUrl: '/logo.jpg',
+        width: 1024,
+        height: 1024,
+        alt: 'MASAR Logo',
         type: 'image/jpeg',
       },
     ],
@@ -81,7 +90,7 @@ export const metadata: Metadata = {
     title: 'مسار - منصة أرشفة وخريطة رحلات النزوح السودانية | MASAR',
     description:
       'منصة تفاعلية توثق مسارات وذكريات النزوح الإنساني في السودان عبر الخرائط التفاعلية والصور المؤرخة لحفظ الذاكرة الوطنية.',
-    images: ['/logo.jpg'],
+    images: ['/og-image.jpg'],
     creator: '@masar_sudan',
   },
   robots: {
@@ -109,6 +118,13 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <meta property="og:image" content={`${siteUrl}/og-image.jpg`} />
+        <meta property="og:image:secure_url" content={`${siteUrl}/og-image.jpg`} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:type" content="image/jpeg" />
+        <meta name="twitter:image" content={`${siteUrl}/og-image.jpg`} />
+        <meta name="twitter:card" content="summary_large_image" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
