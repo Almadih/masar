@@ -3,6 +3,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { DisplacementJourney, Waypoint, WaypointPhoto } from '../types';
 import { saveJourneyAction, deleteJourneyAction, toggleJourneyVisibilityAction } from '@/app/actions';
+import { compressImage } from '@/utils/imageOptimizer';
+
+export interface SaveJourneyProgress {
+  stage: 'compressing' | 'uploading' | 'saving';
+  current: number;
+  total: number;
+}
 
 interface JourneyContextType {
   journeys: DisplacementJourney[];
@@ -19,7 +26,8 @@ interface JourneyContextType {
   setActivePhotoIndex: (index: number) => void;
   saveNewOrUpdatedJourney: (
     journey: DisplacementJourney,
-    photoFiles?: Map<string, File> | Record<string, File>
+    photoFiles?: Map<string, File> | Record<string, File>,
+    onProgress?: (progress: SaveJourneyProgress) => void
   ) => Promise<DisplacementJourney>;
   deleteJourneyById: (id: string) => Promise<void>;
   toggleJourneyVisibility: (id: string, isPublic: boolean) => Promise<boolean>;
@@ -111,51 +119,109 @@ export const JourneyProvider: React.FC<JourneyProviderProps> = ({ children, init
 
   const saveNewOrUpdatedJourney = async (
     journey: DisplacementJourney,
-    photoFiles?: Map<string, File> | Record<string, File>
+    photoFiles?: Map<string, File> | Record<string, File>,
+    onProgress?: (progress: SaveJourneyProgress) => void
   ): Promise<DisplacementJourney> => {
-    const hasFiles =
-      photoFiles &&
-      (photoFiles instanceof Map ? photoFiles.size > 0 : Object.keys(photoFiles).length > 0);
-
-    if (hasFiles) {
-      const formData = new FormData();
-      formData.append('journey', JSON.stringify(journey));
-
+    // 1. Collect pending files
+    const pendingEntries: Array<{ photoId: string; file: File }> = [];
+    if (photoFiles) {
       if (photoFiles instanceof Map) {
         photoFiles.forEach((file, photoId) => {
-          formData.append(`photo_${photoId}`, file, file.name);
+          pendingEntries.push({ photoId, file });
         });
       } else {
         Object.entries(photoFiles).forEach(([photoId, file]) => {
-          formData.append(`photo_${photoId}`, file, file.name);
+          pendingEntries.push({ photoId, file });
         });
       }
-
-      const response = await fetch('/api/journeys/save', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to save journey');
-      }
-
-      const data = await response.json();
-      const savedJourney: DisplacementJourney = data.journey;
-
-      updateInMemoryJourneys(savedJourney);
-      return savedJourney;
     }
 
+    const totalFiles = pendingEntries.length;
+
+    // 2. If there are binary image files to upload, compress and upload individually
+    if (totalFiles > 0) {
+      // Stage A: Client-side image compression
+      onProgress?.({ stage: 'compressing', current: 0, total: totalFiles });
+      const compressedEntries: Array<{ photoId: string; file: File }> = [];
+
+      for (let i = 0; i < pendingEntries.length; i++) {
+        const { photoId, file } = pendingEntries[i];
+        const optimized = await compressImage(file);
+        compressedEntries.push({ photoId, file: optimized });
+        onProgress?.({ stage: 'compressing', current: i + 1, total: totalFiles });
+      }
+
+      // Stage B: Concurrent individual uploads to /api/photos/upload
+      onProgress?.({ stage: 'uploading', current: 0, total: totalFiles });
+      let uploadedCount = 0;
+      const concurrency = 3;
+      let currentIndex = 0;
+
+      async function uploadWorker() {
+        while (currentIndex < compressedEntries.length) {
+          const itemIdx = currentIndex++;
+          const { photoId, file } = compressedEntries[itemIdx];
+
+          const formData = new FormData();
+          formData.append('photoId', photoId);
+          formData.append('file', file, file.name);
+
+          let res = await fetch('/api/photos/upload', {
+            method: 'POST',
+            body: formData,
+          });
+
+          // Single retry on transient failure
+          if (!res.ok) {
+            res = await fetch('/api/photos/upload', {
+              method: 'POST',
+              body: formData,
+            });
+          }
+
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.error || `Failed to upload photo (${file.name})`);
+          }
+
+          uploadedCount++;
+          onProgress?.({ stage: 'uploading', current: uploadedCount, total: totalFiles });
+        }
+      }
+
+      const workers = Array.from(
+        { length: Math.min(concurrency, compressedEntries.length) },
+        () => uploadWorker()
+      );
+
+      await Promise.all(workers);
+    }
+
+    // 3. Stage C: Persist journey metadata cleanly via Server Action
+    onProgress?.({ stage: 'saving', current: 0, total: 1 });
+
+    // Ensure all waypoint photos point to the standardized /api/photos/[id] route
+    const sanitizedJourney: DisplacementJourney = {
+      ...journey,
+      waypoints: (journey.waypoints || []).map(wp => ({
+        ...wp,
+        photos: (wp.photos || []).map(photo => ({
+          ...photo,
+          url: photo.url?.startsWith('data:') || photo.url?.startsWith('blob:')
+            ? `/api/photos/${photo.id}`
+            : photo.url || `/api/photos/${photo.id}`,
+        })),
+      })),
+    };
+
     try {
-      const saved = await saveJourneyAction(journey);
+      const saved = await saveJourneyAction(sanitizedJourney);
+      onProgress?.({ stage: 'saving', current: 1, total: 1 });
       updateInMemoryJourneys(saved);
       return saved;
     } catch (err) {
-      console.error('Failed to save journey via server action:', err);
-      updateInMemoryJourneys(journey);
-      return journey;
+      console.error('Failed to persist journey metadata via server action:', err);
+      throw err;
     }
   };
 

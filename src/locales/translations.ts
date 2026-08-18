@@ -264,6 +264,9 @@ export interface TranslationDictionary {
     waypointTitlePlaceholder: string;
     waypointDescPlaceholder: string;
     noPhotosInWaypoint: string;
+    compressingPhotos: string;
+    uploadingPhotos: string;
+    savingJourneyData: string;
   };
   locationPicker: {
     modalTitle: string;
@@ -631,6 +634,9 @@ export const translations: Record<Locale, TranslationDictionary> = {
       waypointTitlePlaceholder: 'مثال: مغادرة الحي تحت القصف',
       waypointDescPlaceholder: 'اكتب تفاصيل أو ملاحظات عن هذه المحطة...',
       noPhotosInWaypoint: 'لم تتم إضافة صور لهذه المحطة بعد',
+      compressingPhotos: 'جاري ضغط وتحسين الصور للرفع السريع...',
+      uploadingPhotos: 'جاري رفع الصور ({current} من {total})...',
+      savingJourneyData: 'جاري حفظ بيانات ومحطات المسار...',
     },
     locationPicker: {
       modalTitle: 'تحديد موقع وتاريخ المحطة',
@@ -996,6 +1002,9 @@ export const translations: Record<Locale, TranslationDictionary> = {
       waypointTitlePlaceholder: 'e.g. Departure Under Shelling',
       waypointDescPlaceholder: 'Write details or field notes about this waypoint...',
       noPhotosInWaypoint: 'No photos added to this waypoint yet',
+      compressingPhotos: 'Compressing photos for fast upload...',
+      uploadingPhotos: 'Uploading photos ({current} of {total})...',
+      savingJourneyData: 'Saving journey data & milestones...',
     },
     locationPicker: {
       modalTitle: 'Set Photo Location & Time',

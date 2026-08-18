@@ -25,7 +25,6 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowLeft,
-  ArrowRight,
   Globe,
   Lock,
   MapPin,
@@ -70,6 +69,7 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
   const [waypoints, setWaypoints] = useState<Waypoint[]>(initialJourney?.waypoints || []);
   const [isProcessingFiles, setIsProcessingFiles] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [savingStatus, setSavingStatus] = useState<string>('');
   const [activeWaypointIndex, setActiveWaypointIndex] = useState<number | null>(null);
   const [activePhotoIndex, setActivePhotoIndex] = useState<number>(0);
 
@@ -435,6 +435,7 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
     }
 
     setIsSaving(true);
+    setSavingStatus(t('uploader.savingJourney'));
 
     try {
       const defaultAuthor = t('uploader.defaultAuthor');
@@ -483,7 +484,24 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
         familyMembersCount,
       };
 
-      const saved = await saveNewOrUpdatedJourney(newOrUpdatedJourney, fileMapRef.current);
+      const saved = await saveNewOrUpdatedJourney(
+        newOrUpdatedJourney,
+        fileMapRef.current,
+        ({ stage, current, total }) => {
+          if (stage === 'compressing') {
+            setSavingStatus(t('uploader.compressingPhotos'));
+          } else if (stage === 'uploading') {
+            setSavingStatus(
+              t('uploader.uploadingPhotos', {
+                current: formatNumber(current, locale),
+                total: formatNumber(total, locale),
+              })
+            );
+          } else if (stage === 'saving') {
+            setSavingStatus(t('uploader.savingJourneyData'));
+          }
+        }
+      );
 
       showToast('success', t('notifications.journeySaved'), t('notifications.journeySavedDesc'));
 
@@ -499,7 +517,9 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
     } catch (err) {
       console.error('Error saving journey:', err);
       showToast('error', t('notifications.errorTitle'), err instanceof Error ? err.message : 'Failed to save journey');
+    } finally {
       setIsSaving(false);
+      setSavingStatus('');
     }
   };
 
@@ -676,17 +696,17 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
                 flexShrink: 0,
               }}
             >
-              <Save size={15} />
+              <Save size={15} className={isSaving ? 'spin-slow' : ''} />
               <span className="desktop-only">
                 {isSaving
-                  ? t('uploader.savingJourney')
+                  ? (savingStatus || t('uploader.savingJourney'))
                   : mode === 'create'
                     ? t('uploader.publishBtn')
                     : t('uploader.saveChangesBtn')}
               </span>
               <span className="mobile-only">
                 {isSaving
-                  ? t('common.loading')
+                  ? (savingStatus || t('common.loading'))
                   : mode === 'create'
                     ? (locale === 'ar' ? 'نشر' : 'Publish')
                     : t('common.save')}
@@ -1563,10 +1583,10 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
                   transition: 'all 0.2s ease',
                 }}
               >
-                <Check size={18} />
+                <Check size={18} className={isSaving ? 'spin-slow' : ''} />
                 <span>
                   {isSaving
-                    ? t('uploader.savingJourney')
+                    ? (savingStatus || t('uploader.savingJourney'))
                     : mode === 'create'
                       ? t('uploader.publishBtn')
                       : t('uploader.saveChangesBtn')}
