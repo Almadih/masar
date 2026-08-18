@@ -333,14 +333,21 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                 width: '32px',
                 height: '32px',
                 borderRadius: '8px',
-                background: 'linear-gradient(135deg, var(--primary-terracotta), var(--amber-sand))',
+                overflow: 'hidden',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 boxShadow: 'var(--shadow-glow)',
+                border: '1px solid var(--glass-border)',
+                background: 'rgba(15, 22, 38, 0.6)',
+                flexShrink: 0,
               }}
             >
-              <MapPin color="#ffffff" size={17} />
+              <img
+                src="/logo.jpg"
+                alt="MASAR (مسار)"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
             </div>
             <span className="desktop-only" style={{ fontSize: '16px', fontWeight: 800, color: '#ffffff' }}>
               MASAR <span style={{ color: 'var(--amber-sand)' }}>مسار</span>

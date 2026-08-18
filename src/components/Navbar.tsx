@@ -63,15 +63,25 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
               width: '38px',
               height: '38px',
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, var(--primary-terracotta), var(--amber-sand))',
+              overflow: 'hidden',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               boxShadow: 'var(--shadow-glow)',
               flexShrink: 0,
+              background: 'rgba(15, 22, 38, 0.6)',
+              border: '1px solid var(--glass-border)',
             }}
           >
-            <MapPin color="#ffffff" size={20} />
+            <img
+              src="/logo.jpg"
+              alt="MASAR (مسار)"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              }}
+            />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

@@ -13,6 +13,24 @@ export default function NotFound() {
       padding: '2rem',
       textAlign: 'center'
     }}>
+      <div
+        style={{
+          width: '72px',
+          height: '72px',
+          borderRadius: '18px',
+          overflow: 'hidden',
+          border: '1px solid var(--glass-border)',
+          marginBottom: '1.25rem',
+          boxShadow: 'var(--shadow-glow)',
+          background: 'rgba(15, 22, 38, 0.6)',
+        }}
+      >
+        <img
+          src="/logo.jpg"
+          alt="MASAR (مسار)"
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      </div>
       <h2 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--primary-terracotta)' }}>
         ٤٠٤ - الصفحة غير موجودة / 404 - Not Found
       </h2>

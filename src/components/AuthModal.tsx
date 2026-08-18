@@ -73,19 +73,28 @@ export const AuthModal: React.FC = () => {
         <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
           <div
             style={{
-              width: '54px',
-              height: '54px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, rgba(217, 107, 67, 0.2), rgba(230, 167, 65, 0.2))',
-              border: '1px solid var(--primary-terracotta)',
+              width: '64px',
+              height: '64px',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              border: '1px solid var(--glass-border)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              margin: '0 auto 12px auto',
-              color: 'var(--primary-terracotta)',
+              margin: '0 auto 14px auto',
+              boxShadow: 'var(--shadow-glow)',
+              background: 'rgba(15, 22, 38, 0.6)',
             }}
           >
-            <ShieldCheck size={28} />
+            <img
+              src="/logo.jpg"
+              alt="MASAR (مسار)"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              }}
+            />
           </div>
           <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#ffffff', marginBottom: '6px' }}>
             {t('auth.modalTitle')}

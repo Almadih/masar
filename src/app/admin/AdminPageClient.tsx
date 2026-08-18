@@ -51,14 +51,21 @@ function AdminHeader() {
               width: '40px',
               height: '40px',
               borderRadius: '12px',
-              background: 'linear-gradient(135deg, var(--primary-terracotta), var(--amber-sand))',
+              overflow: 'hidden',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               boxShadow: 'var(--shadow-glow)',
+              border: '1px solid var(--glass-border)',
+              background: 'rgba(15, 22, 38, 0.6)',
+              flexShrink: 0,
             }}
           >
-            <MapPin color="#ffffff" size={22} />
+            <img
+              src="/logo.jpg"
+              alt="MASAR"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

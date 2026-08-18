@@ -172,9 +172,13 @@ export function MainAppShell({ initialJourneys }: MainAppShellProps) {
                 overflow: 'hidden',
                 background: 'linear-gradient(135deg, rgba(217, 107, 67, 0.15), rgba(19, 27, 46, 0.95))',
                 border: '1px solid var(--glass-border)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '1.5rem',
               }}
             >
-              <div style={{ maxWidth: '720px' }}>
+              <div style={{ maxWidth: '720px', flex: 1 }}>
                 <div
                   style={{
                     display: 'inline-flex',
@@ -261,6 +265,27 @@ export function MainAppShell({ initialJourneys }: MainAppShellProps) {
                     <span>{t('explorer.heroExploreMap')}</span>
                   </button>
                 </div>
+              </div>
+
+              {/* Decorative Brand Logo Badge on Desktop */}
+              <div
+                className="desktop-only"
+                style={{
+                  width: '130px',
+                  height: '130px',
+                  borderRadius: '24px',
+                  overflow: 'hidden',
+                  flexShrink: 0,
+                  boxShadow: '0 12px 36px rgba(217, 107, 67, 0.25)',
+                  border: '1px solid rgba(230, 167, 65, 0.3)',
+                  background: 'rgba(11, 15, 25, 0.6)',
+                }}
+              >
+                <img
+                  src="/logo.jpg"
+                  alt="MASAR (مسار)"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
               </div>
             </div>
 

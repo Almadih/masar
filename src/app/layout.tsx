@@ -6,6 +6,10 @@ import 'leaflet/dist/leaflet.css';
 export const metadata: Metadata = {
   title: 'MASAR - Sudan Displacement Archival & Mapping Platform',
   description: "Map Your Path. Share Your Story. Honor the Journey. Sudan Displacement Archival & Mapping Platform.",
+  icons: {
+    icon: '/logo.jpg',
+    apple: '/logo.jpg',
+  },
 };
 
 export default function RootLayout({

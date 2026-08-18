@@ -556,17 +556,24 @@ export const JourneyFormPage: React.FC<JourneyFormPageProps> = ({ mode, initialJ
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div
               style={{
-                width: '28px',
-                height: '28px',
+                width: '32px',
+                height: '32px',
                 borderRadius: '8px',
-                background: 'linear-gradient(135deg, var(--primary-terracotta), var(--amber-sand))',
+                overflow: 'hidden',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 boxShadow: 'var(--shadow-glow)',
+                border: '1px solid var(--glass-border)',
+                background: 'rgba(15, 22, 38, 0.6)',
+                flexShrink: 0,
               }}
             >
-              <Compass size={16} color="#ffffff" />
+              <img
+                src="/logo.jpg"
+                alt="MASAR (مسار)"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
             </div>
             <span style={{ fontWeight: 800, fontSize: '15px', letterSpacing: '0.5px' }}>
               <span className="gradient-text">{t('common.appName')}</span>
