@@ -17,7 +17,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ journeys }) => {
     return {
       totalJourneys: journeys.length,
       totalKm: journeys.reduce((sum, j) => sum + (j.distanceKm || 0), 0),
-      totalPhotos: journeys.reduce((sum, j) => sum + (j.photos?.length || 0), 0),
+      totalPhotos: journeys.reduce((sum, j) => sum + (j.waypoints?.reduce((wSum, w) => wSum + (w.photos?.length || 0), 0) || 0), 0),
       totalFamilyMembers: journeys.reduce((sum, j) => sum + (j.familyMembersCount || 4), 0),
     };
   }, [journeys]);

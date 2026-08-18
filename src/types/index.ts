@@ -10,20 +10,32 @@ export interface User {
   isAdmin?: boolean;
 }
 
-export interface PhotoPoint {
+export interface WaypointPhoto {
   id: string;
-  journeyId: string;
+  waypointId?: string;
   url: string;
   filename: string;
+  caption?: string;
+  notes?: string;
+  order?: number;
+}
+
+export interface Waypoint {
+  id: string;
+  journeyId: string;
   latitude: number;
   longitude: number;
   locationName: string;
   timestamp: string; // ISO string or format "YYYY-MM-DD HH:mm"
-  caption: string;
-  notes?: string;
-  hasExif: boolean;
+  title?: string;
+  description?: string;
   order: number;
+  photos: WaypointPhoto[];
+  hasExif?: boolean;
 }
+
+// Type alias for compatibility if needed during transitions
+export type PhotoPoint = Waypoint;
 
 export interface DisplacementJourney {
   id: string;
@@ -36,7 +48,7 @@ export interface DisplacementJourney {
   destination: string;
   startDate: string;
   endDate?: string;
-  photos: PhotoPoint[];
+  waypoints: Waypoint[];
   distanceKm: number;
   createdAt: string;
   isPublic: boolean;

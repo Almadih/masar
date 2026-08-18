@@ -146,6 +146,11 @@ export interface TranslationDictionary {
     privateViewAlert: string;
     privateViewDesc: string;
     shareTextPrefix: string;
+    photosInMilestone: string;
+    photoOfMilestone: string;
+    nextPhoto: string;
+    prevPhoto: string;
+    galleryThumbnails: string;
   };
   map: {
     streetView: string;
@@ -163,6 +168,7 @@ export interface TranslationDictionary {
     recenterSudan: string;
     fullscreen: string;
     exitFullscreen: string;
+    multiPhotoBadge: string;
   };
   stats: {
     bannerTitle: string;
@@ -177,6 +183,8 @@ export interface TranslationDictionary {
     corridorNorthDesc: string;
     corridorEastTitle: string;
     corridorEastDesc: string;
+    corridorWestTitle: string;
+    corridorWestDesc: string;
     corridorSouthTitle: string;
     corridorSouthDesc: string;
   };
@@ -245,6 +253,17 @@ export interface TranslationDictionary {
     previewStart: string;
     previewDest: string;
     locationPending: string;
+    addPhotosToPoint: string;
+    photosAtPoint: string;
+    setAsPointCover: string;
+    removePointImage: string;
+    addWaypointBtn: string;
+    deleteWaypointConfirmTitle: string;
+    deleteWaypointConfirmDesc: string;
+    waypointTitleLabel: string;
+    waypointTitlePlaceholder: string;
+    waypointDescPlaceholder: string;
+    noPhotosInWaypoint: string;
   };
   locationPicker: {
     modalTitle: string;
@@ -262,6 +281,11 @@ export interface TranslationDictionary {
     presetNow: string;
     confirmBtn: string;
     defaultCoordinateName: string;
+    searchPlaceholder: string;
+    searching: string;
+    noResultsFound: string;
+    verifiedHub: string;
+    clearSearch: string;
   };
   auth: {
     modalTitle: string;
@@ -489,6 +513,11 @@ export const translations: Record<Locale, TranslationDictionary> = {
       privateViewAlert: 'عرض خاص / غير معتمد:',
       privateViewDesc: 'هذا المسار مخفي عن المجتمع والجمهور، ولا يمكن الوصول إليه إلا من خلالك أو من قبل إدارة المنصة.',
       shareTextPrefix: '{title} - مسار رحلة نزوح في السودان ({start} ➔ {dest})',
+      photosInMilestone: '{count} صور',
+      photoOfMilestone: 'صورة {current} من {total}',
+      nextPhoto: 'الصورة التالية',
+      prevPhoto: 'الصورة السابقة',
+      galleryThumbnails: 'معرض صور المحطة',
     },
     map: {
       streetView: 'خريطة الشوارع',
@@ -506,6 +535,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
       recenterSudan: 'إعادة ضبط العرض على السودان',
       fullscreen: 'عرض ملء الشاشة',
       exitFullscreen: 'الخروج من ملء الشاشة',
+      multiPhotoBadge: '{count} صور',
     },
     stats: {
       bannerTitle: 'أرشيف النزوح والأثر الإنساني في السودان',
@@ -520,14 +550,16 @@ export const translations: Record<Locale, TranslationDictionary> = {
       corridorNorthDesc: 'الخرطوم ➔ دنقلا ➔ وادي حلفا ➔ معبر أرقين / أشكال ➔ القاهرة',
       corridorEastTitle: 'الممر الشرقي (البحر الأحمر)',
       corridorEastDesc: 'الخرطوم ➔ ود مدني ➔ القضارف ➔ كسلا ➔ بورتسودان',
+      corridorWestTitle: 'الممر الغربي والجنوبي (تشاد وجنوب السودان)',
+      corridorWestDesc: 'دارفور / كوستي ➔ معبر أدري / الرنك ➔ تشاد وجنوب السودان',
       corridorSouthTitle: 'الممر الجنوبي والداخلي',
       corridorSouthDesc: 'الخرطوم ➔ سنار ➔ النيل الأبيض / الأزرق ➔ تشاد وجنوب السودان',
     },
     uploader: {
       modalTitleCreate: 'توثيق مسار نزوح جديد',
-      modalTitleEdit: 'تعديل مسار النزوح',
       modalSubtitleCreate: 'شارك ذكريات ومحطات رحلتك بالصور والتاريخ لحفظ الذاكرة الإنسانية للأجيال القادمة.',
       modalSubtitleEdit: 'قم بتحديث محطات القصة أو تعديل الصور والمواقع الجغرافية.',
+      modalTitleEdit: 'تعديل مسار النزوح',
       pageTitleCreate: 'إنشاء وتوثيق مسار رحلة',
       pageTitleEdit: 'تعديل مسار الرحلة والذكريات',
       pageSubtitleCreate: 'سجل محطات طريقك بالصور والتواريخ لتخليد الذاكرة الحية للصمود الإنساني.',
@@ -588,6 +620,17 @@ export const translations: Record<Locale, TranslationDictionary> = {
       previewStart: 'البداية',
       previewDest: 'الوجهة',
       locationPending: 'موقع قيد التحديد...',
+      addPhotosToPoint: 'إضافة صور لهذه النقطة',
+      photosAtPoint: '{count} صور في هذه النقطة',
+      setAsPointCover: 'تعيين كصورة رئيسية',
+      removePointImage: 'حذف الصورة',
+      addWaypointBtn: 'إضافة محطة جديدة',
+      deleteWaypointConfirmTitle: 'حذف المحطة',
+      deleteWaypointConfirmDesc: 'هل أنت متأكد من رغبتك في حذف هذه المحطة وكافة الصور المرتبطة بها؟',
+      waypointTitleLabel: 'عنوان المحطة (اختياري)',
+      waypointTitlePlaceholder: 'مثال: مغادرة الحي تحت القصف',
+      waypointDescPlaceholder: 'اكتب تفاصيل أو ملاحظات عن هذه المحطة...',
+      noPhotosInWaypoint: 'لم تتم إضافة صور لهذه المحطة بعد',
     },
     locationPicker: {
       modalTitle: 'تحديد موقع وتاريخ المحطة',
@@ -605,6 +648,11 @@ export const translations: Record<Locale, TranslationDictionary> = {
       presetNow: '🕒 الوقت الحالي',
       confirmBtn: 'تأكيد الموقع والوقت',
       defaultCoordinateName: 'موقع ({lat}, {lng})',
+      searchPlaceholder: 'ابحث عن مدينة، معبر، حي، أو معلم...',
+      searching: 'جاري البحث في الخريطة...',
+      noResultsFound: 'لم يتم العثور على نتائج، انقر على الخريطة مباشرة',
+      verifiedHub: 'محطة موثقة',
+      clearSearch: 'مسح البحث',
     },
     auth: {
       modalTitle: 'توثيق وحفظ الذاكرة',
@@ -830,6 +878,11 @@ export const translations: Record<Locale, TranslationDictionary> = {
       privateViewAlert: 'Private / Unapproved View:',
       privateViewDesc: 'This journey is hidden from public view or pending review. It is only accessible to you as the author or an administrator.',
       shareTextPrefix: '{title} - Sudan Displacement Journey ({start} ➔ {dest})',
+      photosInMilestone: '{count} photos',
+      photoOfMilestone: 'Photo {current} of {total}',
+      nextPhoto: 'Next photo',
+      prevPhoto: 'Previous photo',
+      galleryThumbnails: 'Waypoint gallery',
     },
     map: {
       streetView: 'Street Map',
@@ -847,6 +900,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
       recenterSudan: 'Recenter to Sudan',
       fullscreen: 'Full Screen Map',
       exitFullscreen: 'Exit Full Screen',
+      multiPhotoBadge: '{count} photos',
     },
     stats: {
       bannerTitle: 'Human Impact & Displacement Archive',
@@ -861,14 +915,16 @@ export const translations: Record<Locale, TranslationDictionary> = {
       corridorNorthDesc: 'Khartoum ➔ Dongola ➔ Wadi Halfa ➔ Argeen/Ashkeet ➔ Cairo',
       corridorEastTitle: 'Eastern Corridor (Red Sea)',
       corridorEastDesc: 'Khartoum ➔ Wad Madani ➔ Gedaref ➔ Kassala ➔ Port Sudan',
+      corridorWestTitle: 'Western & Southern Corridor (Chad & South Sudan)',
+      corridorWestDesc: 'Darfur / Kosti ➔ Adre Border / Renk ➔ Chad & South Sudan',
       corridorSouthTitle: 'Southern & Domestic Corridors',
       corridorSouthDesc: 'Khartoum ➔ Sennar ➔ White/Blue Nile ➔ Chad & South Sudan',
     },
     uploader: {
       modalTitleCreate: 'Document a New Displacement Path',
-      modalTitleEdit: 'Edit Displacement Path',
       modalSubtitleCreate: 'Preserve your family\'s journey with photos, dates, and waypoints to honor the memory and endurance of Sudanese people.',
       modalSubtitleEdit: 'Update milestone locations, modify photos, or edit journey details.',
+      modalTitleEdit: 'Edit Displacement Path',
       pageTitleCreate: 'Document & Map a Journey',
       pageTitleEdit: 'Edit Journey & Milestones',
       pageSubtitleCreate: 'Record your path with photos and timestamps to preserve human resilience in the MASAR archive.',
@@ -929,6 +985,17 @@ export const translations: Record<Locale, TranslationDictionary> = {
       previewStart: 'Start',
       previewDest: 'Destination',
       locationPending: 'Location pending...',
+      addPhotosToPoint: 'Add photos to this point',
+      photosAtPoint: '{count} photos at this point',
+      setAsPointCover: 'Set as cover',
+      removePointImage: 'Remove image',
+      addWaypointBtn: 'Add New Waypoint',
+      deleteWaypointConfirmTitle: 'Delete Waypoint',
+      deleteWaypointConfirmDesc: 'Are you sure you want to delete this waypoint and all of its photos?',
+      waypointTitleLabel: 'Waypoint Title (Optional)',
+      waypointTitlePlaceholder: 'e.g. Departure Under Shelling',
+      waypointDescPlaceholder: 'Write details or field notes about this waypoint...',
+      noPhotosInWaypoint: 'No photos added to this waypoint yet',
     },
     locationPicker: {
       modalTitle: 'Set Photo Location & Time',
@@ -946,6 +1013,11 @@ export const translations: Record<Locale, TranslationDictionary> = {
       presetNow: '🕒 Now',
       confirmBtn: 'Confirm Location & Time',
       defaultCoordinateName: 'Location ({lat}, {lng})',
+      searchPlaceholder: 'Search city, town, border crossing, or landmark...',
+      searching: 'Searching map...',
+      noResultsFound: 'No locations found, click directly on the map',
+      verifiedHub: 'Verified Point',
+      clearSearch: 'Clear search',
     },
     auth: {
       modalTitle: 'Document & Preserve',

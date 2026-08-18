@@ -5,7 +5,7 @@ import { auth } from '@/lib/auth';
 import { isUserAdmin } from '@/lib/admin';
 import { saveJourneyToDb, getJourneyByIdFromDb } from '@/lib/dbServices';
 import { savePhotoBuffer } from '@/lib/photoStorage';
-import type { DisplacementJourney } from '@/types';
+import type { DisplacementJourney, Waypoint, WaypointPhoto } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,41 +64,51 @@ export async function POST(request: NextRequest) {
       journey.authorAvatar = user.image || journey.authorAvatar;
     }
 
-    // 4. Process Multipart Photos from FormData
-    const updatedPhotos = await Promise.all(
-      (journey.photos || []).map(async (photo, idx) => {
-        const fileKey = `photo_${photo.id}`;
-        const formEntry = formData.get(fileKey);
+    // 4. Process Multipart Photos for Each Waypoint from FormData
+    const updatedWaypoints: Waypoint[] = await Promise.all(
+      (journey.waypoints || []).map(async (waypoint, wIdx) => {
+        const updatedPhotos: WaypointPhoto[] = await Promise.all(
+          (waypoint.photos || []).map(async (photo, pIdx) => {
+            const fileKey = `photo_${photo.id}`;
+            const formEntry = formData.get(fileKey) || formData.get(photo.id);
 
-        if (formEntry && typeof formEntry === 'object' && 'arrayBuffer' in formEntry) {
-          const file = formEntry as File;
-          const arrayBuf = await file.arrayBuffer();
-          const buffer = Buffer.from(arrayBuf);
-          const originalName = file.name || photo.filename || 'photo.jpg';
+            if (formEntry && typeof formEntry === 'object' && 'arrayBuffer' in formEntry) {
+              const file = formEntry as File;
+              const arrayBuf = await file.arrayBuffer();
+              const buffer = Buffer.from(arrayBuf);
+              const originalName = file.name || photo.filename || 'photo.jpg';
 
-          const saved = await savePhotoBuffer(
-            photo.id,
-            buffer,
-            originalName,
-            file.type
-          );
+              const saved = await savePhotoBuffer(
+                photo.id,
+                buffer,
+                originalName,
+                file.type
+              );
 
-          return {
-            ...photo,
-            url: saved.url,
-            filename: originalName,
-            order: photo.order ?? idx + 1,
-          };
-        }
+              return {
+                ...photo,
+                url: saved.url,
+                filename: originalName,
+                order: photo.order ?? pIdx + 1,
+              };
+            }
+
+            return {
+              ...photo,
+              order: photo.order ?? pIdx + 1,
+            };
+          })
+        );
 
         return {
-          ...photo,
-          order: photo.order ?? idx + 1,
+          ...waypoint,
+          order: waypoint.order ?? wIdx + 1,
+          photos: updatedPhotos,
         };
       })
     );
 
-    journey.photos = updatedPhotos;
+    journey.waypoints = updatedWaypoints;
 
     // 5. Persist to Database
     const savedJourney = await saveJourneyToDb(journey);

@@ -3,10 +3,10 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { DisplacementJourney, PhotoPoint } from '../types';
+import type { DisplacementJourney, Waypoint, WaypointPhoto } from '../types';
 import { useJourney } from '../context/JourneyContext';
 import { useLanguage } from '../context/LanguageContext';
-import { formatNumber, formatDistance, getDirectionArrow } from '../utils/i18nHelpers';
+import { formatNumber, formatDistance, getDirectionArrow, formatPhotosCount } from '../utils/i18nHelpers';
 import { Compass, Maximize2, Minimize2, Globe } from 'lucide-react';
 
 // Fix Leaflet's default icon path issues in Next.js
@@ -22,8 +22,10 @@ if (typeof window !== 'undefined') {
 interface MapViewProps {
   journeys: DisplacementJourney[];
   selectedJourney: DisplacementJourney | null;
-  activePhoto: PhotoPoint | null;
-  onPhotoClick?: (photo: PhotoPoint, index: number) => void;
+  activeWaypoint?: Waypoint | null;
+  activePhoto?: WaypointPhoto | null;
+  onWaypointClick?: (waypoint: Waypoint, index: number) => void;
+  onPhotoClick?: (item: any, index: number) => void;
   isLocationPickerMode?: boolean;
   onLocationSelected?: (lat: number, lng: number) => void;
   pickedLat?: number | null;
@@ -33,7 +35,9 @@ interface MapViewProps {
 export const MapView: React.FC<MapViewProps> = ({
   journeys,
   selectedJourney,
+  activeWaypoint,
   activePhoto,
+  onWaypointClick,
   onPhotoClick,
   isLocationPickerMode = false,
   onLocationSelected,
@@ -88,8 +92,8 @@ export const MapView: React.FC<MapViewProps> = ({
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    if (selectedJourney && selectedJourney.photos.length > 0) {
-      const validCoords: [number, number][] = selectedJourney.photos
+    if (selectedJourney && selectedJourney.waypoints && selectedJourney.waypoints.length > 0) {
+      const validCoords: [number, number][] = selectedJourney.waypoints
         .filter(p => typeof p.latitude === 'number' && !isNaN(p.latitude) && typeof p.longitude === 'number' && !isNaN(p.longitude))
         .map(p => [Number(p.latitude), Number(p.longitude)]);
 
@@ -103,7 +107,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
     const allCoords: [number, number][] = [];
     (journeys || []).forEach(j => {
-      (j.photos || []).forEach(p => {
+      (j.waypoints || []).forEach(p => {
         if (typeof p.latitude === 'number' && !isNaN(p.latitude) && typeof p.longitude === 'number' && !isNaN(p.longitude)) {
           allCoords.push([Number(p.latitude), Number(p.longitude)]);
         }
@@ -267,7 +271,11 @@ export const MapView: React.FC<MapViewProps> = ({
         });
         tempMarkerRef.current = L.marker([pickedLat, pickedLng], { icon: pickerIcon }).addTo(map);
       }
-      map.panTo([pickedLat, pickedLng], { animate: true });
+      if (map.getZoom() < 8) {
+        map.setView([pickedLat, pickedLng], 10, { animate: true });
+      } else {
+        map.panTo([pickedLat, pickedLng], { animate: true });
+      }
     } else {
       if (tempMarkerRef.current) {
         tempMarkerRef.current.remove();
@@ -286,16 +294,17 @@ export const MapView: React.FC<MapViewProps> = ({
 
     // If a single journey is selected, prioritize rendering its path in detail
     if (selectedJourney) {
-      const photos = selectedJourney.photos || [];
-      const validPhotos = photos.filter(
+      const waypoints = selectedJourney.waypoints || [];
+      const validWaypoints = waypoints.filter(
         p => typeof p.latitude === 'number' && !isNaN(p.latitude) && typeof p.longitude === 'number' && !isNaN(p.longitude)
       );
 
-      const sortedPhotos = [...validPhotos].sort(
-        (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-      );
+      const sortedWaypoints = [...validWaypoints].sort((a, b) => {
+        if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
+        return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+      });
 
-      const latLngs: [number, number][] = sortedPhotos.map(p => [Number(p.latitude), Number(p.longitude)]);
+      const latLngs: [number, number][] = sortedWaypoints.map(p => [Number(p.latitude), Number(p.longitude)]);
 
       if (latLngs.length >= 2) {
         // Outer glowing line
@@ -317,29 +326,40 @@ export const MapView: React.FC<MapViewProps> = ({
         layerGroup.addLayer(pathLine);
       }
 
-      // Add Step Markers
-      sortedPhotos.forEach((photo, idx) => {
-        const isActive = activePhoto?.id === photo.id;
+      // Add Step Markers for Waypoints
+      sortedWaypoints.forEach((waypoint, idx) => {
+        const isActive =
+          (activeWaypoint && activeWaypoint.id === waypoint.id) ||
+          (activePhoto && waypoint.photos?.some(p => p.id === activePhoto.id));
         const markerClass = isActive ? 'custom-step-marker active' : 'custom-step-marker';
+        const photoCount = waypoint.photos?.length || 0;
+        const photoBadgeHtml = photoCount > 1 ? `<div class="photo-badge">${formatNumber(photoCount, locale)}</div>` : '';
 
         const customIcon = L.divIcon({
           className: 'custom-leaflet-icon-wrapper',
-          html: `<div class="${markerClass}"><span>${idx + 1}</span></div>`,
+          html: `<div class="${markerClass}"><span>${idx + 1}</span>${photoBadgeHtml}</div>`,
           iconSize: [32, 32],
           iconAnchor: [16, 16],
         });
 
-        const marker = L.marker([Number(photo.latitude), Number(photo.longitude)], { icon: customIcon });
+        const marker = L.marker([Number(waypoint.latitude), Number(waypoint.longitude)], { icon: customIcon });
 
         // Popup content with preview thumbnail
         const stepNumFormatted = formatNumber(idx + 1, locale);
+        const primaryPhoto = waypoint.photos?.[0];
+        const primaryPhotoUrl = primaryPhoto?.url || 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&auto=format&fit=crop&q=80';
+        const photoCountLabel = photoCount > 1 ? `<span style="background: rgba(230, 167, 65, 0.2); color: var(--amber-sand); border: 1px solid var(--amber-sand); border-radius: 9999px; padding: 2px 8px; font-size: 10px; font-weight: 700;">📷 ${formatPhotosCount(photoCount, locale, t)}</span>` : '';
+
         const popupContent = `
           <div style="width: 220px; font-family: inherit; direction: ${locale === 'ar' ? 'rtl' : 'ltr'}; text-align: ${locale === 'ar' ? 'right' : 'left'};">
-            <img src="${photo.url}" style="width: 100%; height: 120px; object-fit: cover; border-top-left-radius: 12px; border-top-right-radius: 12px;" />
+            <img src="${primaryPhotoUrl}" style="width: 100%; height: 120px; object-fit: cover; border-top-left-radius: 12px; border-top-right-radius: 12px;" />
             <div style="padding: 10px;">
-              <div style="font-weight: 700; font-size: 13px; color: #f3f4f6; margin-bottom: 4px;">${t('map.stepNumber', { number: stepNumFormatted })}: ${photo.locationName}</div>
-              <div style="font-size: 11px; color: #9ca3af; margin-bottom: 6px;">📅 ${photo.timestamp}</div>
-              <p style="font-size: 11px; color: #d1d5db; line-height: 1.3;">"${photo.caption || ''}"</p>
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px; margin-bottom: 4px;">
+                <span style="font-weight: 700; font-size: 13px; color: #f3f4f6;">${t('map.stepNumber', { number: stepNumFormatted })}: ${waypoint.locationName}</span>
+                ${photoCountLabel}
+              </div>
+              <div style="font-size: 11px; color: #9ca3af; margin-bottom: 6px;">📅 ${waypoint.timestamp}</div>
+              <p style="font-size: 11px; color: #d1d5db; line-height: 1.3;">"${waypoint.description || primaryPhoto?.caption || ''}"</p>
             </div>
           </div>
         `;
@@ -347,8 +367,11 @@ export const MapView: React.FC<MapViewProps> = ({
         marker.bindPopup(popupContent, { closeButton: false });
 
         marker.on('click', () => {
+          if (onWaypointClick) {
+            onWaypointClick(waypoint, idx);
+          }
           if (onPhotoClick) {
-            onPhotoClick(photo, idx);
+            onPhotoClick(waypoint, idx);
           }
         });
 
@@ -369,15 +392,18 @@ export const MapView: React.FC<MapViewProps> = ({
       const allBounds: [number, number][] = [];
 
       (journeys || []).forEach(j => {
-        if (!j.photos || j.photos.length === 0) return;
-        const validPhotos = j.photos.filter(
+        const waypoints = j.waypoints || [];
+        if (waypoints.length === 0) return;
+        const validWaypoints = waypoints.filter(
           p => typeof p.latitude === 'number' && !isNaN(p.latitude) && typeof p.longitude === 'number' && !isNaN(p.longitude)
         );
-        if (validPhotos.length === 0) return;
+        if (validWaypoints.length === 0) return;
 
-        const sorted = [...validPhotos].sort(
-          (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-        );
+        const sorted = [...validWaypoints].sort((a, b) => {
+          if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
+          return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+        });
+
         const latLngs: [number, number][] = sorted.map(p => [Number(p.latitude), Number(p.longitude)]);
         allBounds.push(...latLngs);
 
@@ -392,8 +418,8 @@ export const MapView: React.FC<MapViewProps> = ({
         }
 
         // Start & End markers for journey
-        const startPhoto = sorted[0];
-        const endPhoto = sorted[sorted.length - 1];
+        const startPoint = sorted[0];
+        const endPoint = sorted[sorted.length - 1];
 
         const overviewIcon = L.divIcon({
           className: 'custom-leaflet-icon-wrapper',
@@ -412,7 +438,7 @@ export const MapView: React.FC<MapViewProps> = ({
           </div>
         `;
 
-        const startMarker = L.marker([Number(startPhoto.latitude), Number(startPhoto.longitude)], { icon: overviewIcon });
+        const startMarker = L.marker([Number(startPoint.latitude), Number(startPoint.longitude)], { icon: overviewIcon });
         startMarker.bindTooltip(`<b>${j.title}</b><br/>${t('map.legendStart')}: ${j.startLocation}`, { direction: 'top' });
         startMarker.bindPopup(popupContent);
         startMarker.on('click', () => {
@@ -422,7 +448,7 @@ export const MapView: React.FC<MapViewProps> = ({
         layerGroup.addLayer(startMarker);
 
         if (sorted.length > 1) {
-          const endMarker = L.marker([Number(endPhoto.latitude), Number(endPhoto.longitude)], { icon: overviewIcon });
+          const endMarker = L.marker([Number(endPoint.latitude), Number(endPoint.longitude)], { icon: overviewIcon });
           endMarker.bindTooltip(`<b>${j.title}</b><br/>${t('map.legendDestination')}: ${j.destination}`, { direction: 'top' });
           endMarker.bindPopup(popupContent);
           endMarker.on('click', () => {
@@ -446,22 +472,22 @@ export const MapView: React.FC<MapViewProps> = ({
 
     // Ensure map tiles and markers are aligned after drawing
     setTimeout(invalidateMapSize, 100);
-  }, [journeys, selectedJourney, activePhoto, onPhotoClick, setSelectedJourney, invalidateMapSize, t, locale]);
+  }, [journeys, selectedJourney, activeWaypoint, activePhoto, onWaypointClick, onPhotoClick, setSelectedJourney, invalidateMapSize, t, locale]);
 
-  // Center on active photo if updated
+  // Center on active waypoint if updated
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (map && activePhoto && selectedJourney) {
+    if (map && activeWaypoint && selectedJourney) {
       if (
-        typeof activePhoto.latitude === 'number' &&
-        !isNaN(activePhoto.latitude) &&
-        typeof activePhoto.longitude === 'number' &&
-        !isNaN(activePhoto.longitude)
+        typeof activeWaypoint.latitude === 'number' &&
+        !isNaN(activeWaypoint.latitude) &&
+        typeof activeWaypoint.longitude === 'number' &&
+        !isNaN(activeWaypoint.longitude)
       ) {
-        map.panTo([Number(activePhoto.latitude), Number(activePhoto.longitude)], { animate: true, duration: 0.6 });
+        map.panTo([Number(activeWaypoint.latitude), Number(activeWaypoint.longitude)], { animate: true, duration: 0.6 });
       }
     }
-  }, [activePhoto, selectedJourney]);
+  }, [activeWaypoint, selectedJourney]);
 
   return (
     <div
@@ -552,7 +578,7 @@ export const MapView: React.FC<MapViewProps> = ({
         <div
           style={{
             position: 'absolute',
-            top: '16px',
+            bottom: '16px',
             left: '50%',
             transform: 'translateX(-50%)',
             zIndex: 1000,

@@ -75,27 +75,37 @@ async function main() {
       },
     });
 
-    await prisma.photoPoint.deleteMany({
+    // Delete existing waypoints
+    await prisma.waypoint.deleteMany({
       where: { journeyId: journey.id },
     });
 
-    if (journey.photos && journey.photos.length > 0) {
-      await prisma.photoPoint.createMany({
-        data: journey.photos.map((p, idx) => ({
-          id: p.id,
-          journeyId: journey.id,
-          url: p.url,
-          filename: p.filename,
-          latitude: p.latitude,
-          longitude: p.longitude,
-          locationName: p.locationName,
-          timestamp: p.timestamp,
-          caption: p.caption || '',
-          notes: p.notes || null,
-          hasExif: p.hasExif ?? true,
-          orderIndex: p.order ?? idx + 1,
-        })),
-      });
+    if (journey.waypoints && journey.waypoints.length > 0) {
+      for (const w of journey.waypoints) {
+        await prisma.waypoint.create({
+          data: {
+            id: w.id,
+            journeyId: journey.id,
+            latitude: w.latitude,
+            longitude: w.longitude,
+            locationName: w.locationName,
+            timestamp: w.timestamp,
+            title: w.title || '',
+            description: w.description || null,
+            orderIndex: w.order,
+            photos: {
+              create: (w.photos || []).map((p, pIdx) => ({
+                id: p.id,
+                url: p.url,
+                filename: p.filename,
+                caption: p.caption || '',
+                notes: p.notes || null,
+                orderIndex: p.order ?? pIdx + 1,
+              })),
+            },
+          },
+        });
+      }
     }
   }
 

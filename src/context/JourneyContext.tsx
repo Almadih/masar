@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { DisplacementJourney, PhotoPoint } from '../types';
+import type { DisplacementJourney, Waypoint, WaypointPhoto } from '../types';
 import { saveJourneyAction, deleteJourneyAction, toggleJourneyVisibilityAction } from '@/app/actions';
 
 interface JourneyContextType {
@@ -9,8 +9,12 @@ interface JourneyContextType {
   setJourneys: React.Dispatch<React.SetStateAction<DisplacementJourney[]>>;
   selectedJourney: DisplacementJourney | null;
   setSelectedJourney: (journey: DisplacementJourney | null) => void;
-  selectedPhoto: PhotoPoint | null;
-  setSelectedPhoto: (photo: PhotoPoint | null) => void;
+  selectedWaypoint: Waypoint | null;
+  setSelectedWaypoint: (waypoint: Waypoint | null) => void;
+  activeWaypointIndex: number;
+  setActiveWaypointIndex: (index: number) => void;
+  selectedPhoto: WaypointPhoto | null;
+  setSelectedPhoto: (photo: WaypointPhoto | null) => void;
   activePhotoIndex: number;
   setActivePhotoIndex: (index: number) => void;
   saveNewOrUpdatedJourney: (
@@ -35,7 +39,9 @@ interface JourneyProviderProps {
 export const JourneyProvider: React.FC<JourneyProviderProps> = ({ children, initialJourneys }) => {
   const [journeys, setJourneys] = useState<DisplacementJourney[]>(initialJourneys || []);
   const [selectedJourney, setSelectedJourney] = useState<DisplacementJourney | null>(null);
-  const [selectedPhoto, setSelectedPhoto] = useState<PhotoPoint | null>(null);
+  const [selectedWaypoint, setSelectedWaypoint] = useState<Waypoint | null>(null);
+  const [activeWaypointIndex, setActiveWaypointIndex] = useState<number>(0);
+  const [selectedPhoto, setSelectedPhoto] = useState<WaypointPhoto | null>(null);
   const [activePhotoIndex, setActivePhotoIndex] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
@@ -67,13 +73,24 @@ export const JourneyProvider: React.FC<JourneyProviderProps> = ({ children, init
     }
   }, [initialJourneys]);
 
-  // Sync selected journey photo index
+  // Sync selected journey waypoint and photo
   useEffect(() => {
-    if (selectedJourney && selectedJourney.photos.length > 0) {
-      if (!selectedPhoto || selectedPhoto.journeyId !== selectedJourney.id) {
-        setSelectedPhoto(selectedJourney.photos[0]);
-        setActivePhotoIndex(0);
+    if (selectedJourney && selectedJourney.waypoints && selectedJourney.waypoints.length > 0) {
+      if (!selectedWaypoint || selectedWaypoint.journeyId !== selectedJourney.id) {
+        const firstWp = selectedJourney.waypoints[0];
+        setSelectedWaypoint(firstWp);
+        setActiveWaypointIndex(0);
+        if (firstWp.photos && firstWp.photos.length > 0) {
+          setSelectedPhoto(firstWp.photos[0]);
+          setActivePhotoIndex(0);
+        } else {
+          setSelectedPhoto(null);
+          setActivePhotoIndex(0);
+        }
       }
+    } else {
+      setSelectedWaypoint(null);
+      setSelectedPhoto(null);
     }
   }, [selectedJourney]);
 
@@ -164,6 +181,7 @@ export const JourneyProvider: React.FC<JourneyProviderProps> = ({ children, init
     setJourneys(prev => prev.filter(j => j.id !== id));
     if (selectedJourney?.id === id) {
       setSelectedJourney(null);
+      setSelectedWaypoint(null);
       setSelectedPhoto(null);
     }
 
@@ -182,6 +200,10 @@ export const JourneyProvider: React.FC<JourneyProviderProps> = ({ children, init
         setJourneys,
         selectedJourney,
         setSelectedJourney,
+        selectedWaypoint,
+        setSelectedWaypoint,
+        activeWaypointIndex,
+        setActiveWaypointIndex,
         selectedPhoto,
         setSelectedPhoto,
         activePhotoIndex,

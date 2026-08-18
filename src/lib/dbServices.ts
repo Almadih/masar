@@ -1,5 +1,5 @@
 import { prisma } from './prisma';
-import type { DisplacementJourney } from '../types';
+import type { DisplacementJourney, Waypoint, WaypointPhoto } from '../types';
 import { deletePhotoFiles, saveBase64Photo } from './photoStorage';
 
 export { prisma };
@@ -22,19 +22,25 @@ function mapJourney(j: any): DisplacementJourney {
     status: (j.status as 'APPROVED' | 'PENDING' | 'FLAGGED') || 'APPROVED',
     tags: JSON.parse(j.tags || '[]'),
     familyMembersCount: j.familyMembersCount,
-    photos: (j.photos || []).map((p: any) => ({
-      id: p.id,
-      journeyId: p.journeyId,
-      url: p.url,
-      filename: p.filename,
-      latitude: p.latitude,
-      longitude: p.longitude,
-      locationName: p.locationName,
-      timestamp: p.timestamp,
-      caption: p.caption,
-      notes: p.notes || undefined,
-      hasExif: p.hasExif,
-      order: p.orderIndex,
+    waypoints: (j.waypoints || []).map((w: any) => ({
+      id: w.id,
+      journeyId: w.journeyId,
+      latitude: w.latitude,
+      longitude: w.longitude,
+      locationName: w.locationName,
+      timestamp: w.timestamp,
+      title: w.title || undefined,
+      description: w.description || undefined,
+      order: w.orderIndex,
+      photos: (w.photos || []).map((p: any) => ({
+        id: p.id,
+        waypointId: p.waypointId,
+        url: p.url,
+        filename: p.filename,
+        caption: p.caption || undefined,
+        notes: p.notes || undefined,
+        order: p.orderIndex,
+      })),
     })),
   };
 }
@@ -42,7 +48,14 @@ function mapJourney(j: any): DisplacementJourney {
 export async function getAllJourneysFromDb(): Promise<DisplacementJourney[]> {
   const journeys = await prisma.journey.findMany({
     include: {
-      photos: {
+      waypoints: {
+        include: {
+          photos: {
+            orderBy: {
+              orderIndex: 'asc',
+            },
+          },
+        },
         orderBy: {
           orderIndex: 'asc',
         },
@@ -70,7 +83,14 @@ export async function getPublicJourneysFromDb(authorId?: string): Promise<Displa
           status: 'APPROVED',
         },
     include: {
-      photos: {
+      waypoints: {
+        include: {
+          photos: {
+            orderBy: {
+              orderIndex: 'asc',
+            },
+          },
+        },
         orderBy: {
           orderIndex: 'asc',
         },
@@ -88,7 +108,14 @@ export async function getJourneyByIdFromDb(id: string): Promise<DisplacementJour
   const j = await prisma.journey.findUnique({
     where: { id },
     include: {
-      photos: {
+      waypoints: {
+        include: {
+          photos: {
+            orderBy: {
+              orderIndex: 'asc',
+            },
+          },
+        },
         orderBy: {
           orderIndex: 'asc',
         },
@@ -104,33 +131,50 @@ export async function getJourneyByIdFromDb(id: string): Promise<DisplacementJour
 export async function saveJourneyToDb(journey: DisplacementJourney): Promise<DisplacementJourney> {
   const tagsJson = JSON.stringify(journey.tags || []);
 
-  // Process photos: If any photo has legacy base64 data, convert to file and update URL
-  const processedPhotos = await Promise.all(
-    (journey.photos || []).map(async (p, idx) => {
-      let finalUrl = p.url;
-      if (p.url && p.url.startsWith('data:')) {
-        try {
-          const saved = await saveBase64Photo(p.id, p.url, p.filename);
-          finalUrl = saved.url;
-        } catch (err) {
-          console.error(`Failed to save base64 photo ${p.id} to disk:`, err);
-        }
-      }
+  // Process photos in each waypoint (save base64 if needed)
+  const processedWaypoints: Waypoint[] = await Promise.all(
+    (journey.waypoints || []).map(async (w, wIdx) => {
+      const processedPhotos: WaypointPhoto[] = await Promise.all(
+        (w.photos || []).map(async (p, pIdx) => {
+          let finalUrl = p.url;
+          if (p.url && p.url.startsWith('data:')) {
+            try {
+              const saved = await saveBase64Photo(p.id, p.url, p.filename);
+              finalUrl = saved.url;
+            } catch (err) {
+              console.error(`Failed to save base64 photo ${p.id} to disk:`, err);
+            }
+          }
+          return {
+            ...p,
+            url: finalUrl,
+            order: p.order ?? pIdx + 1,
+          };
+        })
+      );
+
       return {
-        ...p,
-        url: finalUrl,
-        order: p.order ?? idx + 1,
+        ...w,
+        order: w.order ?? wIdx + 1,
+        photos: processedPhotos,
       };
     })
   );
 
   // Check for deleted photos during edit
-  const existingPhotos = await prisma.photoPoint.findMany({
-    where: { journeyId: journey.id },
+  const existingPhotos = await prisma.waypointPhoto.findMany({
+    where: {
+      waypoint: {
+        journeyId: journey.id,
+      },
+    },
     select: { id: true },
   });
 
-  const incomingPhotoIds = new Set(processedPhotos.map((p) => p.id));
+  const incomingPhotoIds = new Set(
+    processedWaypoints.flatMap((w) => w.photos.map((p) => p.id))
+  );
+
   const removedPhotoIds = existingPhotos
     .filter((p) => !incomingPhotoIds.has(p.id))
     .map((p) => p.id);
@@ -180,35 +224,42 @@ export async function saveJourneyToDb(journey: DisplacementJourney): Promise<Dis
       },
     });
 
-    // Delete existing photos in DB for this journey to perform a clean update
-    await tx.photoPoint.deleteMany({
+    // Delete existing waypoints (cascades to photos)
+    await tx.waypoint.deleteMany({
       where: { journeyId: journey.id },
     });
 
-    // Create new photo points if provided
-    if (processedPhotos.length > 0) {
-      await tx.photoPoint.createMany({
-        data: processedPhotos.map((p, idx) => ({
-          id: p.id,
+    // Create new waypoints and nested photos
+    for (const w of processedWaypoints) {
+      await tx.waypoint.create({
+        data: {
+          id: w.id,
           journeyId: journey.id,
-          url: p.url,
-          filename: p.filename,
-          latitude: p.latitude,
-          longitude: p.longitude,
-          locationName: p.locationName,
-          timestamp: p.timestamp,
-          caption: p.caption || '',
-          notes: p.notes || null,
-          hasExif: p.hasExif ?? true,
-          orderIndex: p.order ?? idx + 1,
-        })),
+          latitude: w.latitude,
+          longitude: w.longitude,
+          locationName: w.locationName,
+          timestamp: w.timestamp,
+          title: w.title || '',
+          description: w.description || null,
+          orderIndex: w.order,
+          photos: {
+            create: w.photos.map((p, pIdx) => ({
+              id: p.id,
+              url: p.url,
+              filename: p.filename,
+              caption: p.caption || '',
+              notes: p.notes || null,
+              orderIndex: p.order ?? pIdx + 1,
+            })),
+          },
+        },
       });
     }
   });
 
   return {
     ...journey,
-    photos: processedPhotos,
+    waypoints: processedWaypoints,
   };
 }
 
@@ -241,8 +292,12 @@ export async function updateJourneyStatusInDb(id: string, status: 'APPROVED' | '
 export async function deleteJourneyFromDb(id: string): Promise<boolean> {
   try {
     // 1. Delete associated physical photo files from disk
-    const photos = await prisma.photoPoint.findMany({
-      where: { journeyId: id },
+    const photos = await prisma.waypointPhoto.findMany({
+      where: {
+        waypoint: {
+          journeyId: id,
+        },
+      },
       select: { id: true },
     });
 
@@ -250,7 +305,7 @@ export async function deleteJourneyFromDb(id: string): Promise<boolean> {
       await deletePhotoFiles(photos.map((p) => p.id));
     }
 
-    // 2. Delete journey and cascade photo points in DB
+    // 2. Delete journey (cascades to waypoints and photos in DB)
     await prisma.journey.delete({
       where: { id },
     });
@@ -260,40 +315,3 @@ export async function deleteJourneyFromDb(id: string): Promise<boolean> {
     return false;
   }
 }
-
-/**
- * Migration helper: Scans the database for legacy base64 image strings,
- * writes them as binary files in storage/photos/, and updates PhotoPoint.url to /api/photos/<id>.
- */
-export async function migrateDatabaseBase64Photos(): Promise<{ migratedCount: number }> {
-  try {
-    const base64Photos = await prisma.photoPoint.findMany({
-      where: {
-        url: {
-          startsWith: 'data:',
-        },
-      },
-    });
-
-    let migratedCount = 0;
-    for (const photo of base64Photos) {
-      try {
-        const saved = await saveBase64Photo(photo.id, photo.url, photo.filename);
-        await prisma.photoPoint.update({
-          where: { id: photo.id },
-          data: { url: saved.url },
-        });
-        migratedCount++;
-      } catch (err) {
-        console.error(`Failed to migrate base64 photo ${photo.id}:`, err);
-      }
-    }
-
-    return { migratedCount };
-  } catch (error) {
-    console.error('Error migrating base64 photos:', error);
-    return { migratedCount: 0 };
-  }
-}
-
-

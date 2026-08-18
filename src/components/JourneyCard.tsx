@@ -76,7 +76,9 @@ export const JourneyCard: React.FC<JourneyCardProps> = ({ journey, onSelect }) =
   const isAdmin = Boolean(user?.isAdmin || user?.role === 'ADMIN');
   const canManage = isAuthor || isAdmin;
 
-  const coverPhoto = journey.photos[0];
+  const firstWaypoint = journey.waypoints?.[0];
+  const coverPhoto = firstWaypoint?.photos?.[0];
+  const totalPhotos = journey.waypoints?.reduce((sum, wp) => sum + (wp.photos?.length || 0), 0) || 0;
 
   const handleTogglePrivacy = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -224,7 +226,7 @@ export const JourneyCard: React.FC<JourneyCardProps> = ({ journey, onSelect }) =
             }}
           >
             <Camera size={13} />
-            {formatPhotosCount(journey.photos.length, locale, t)}
+            {formatPhotosCount(totalPhotos, locale, t)}
           </div>
 
           {!journey.isPublic && (

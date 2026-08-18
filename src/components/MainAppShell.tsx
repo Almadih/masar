@@ -716,7 +716,7 @@ export function MainAppShell({ initialJourneys }: MainAppShellProps) {
                         <span>{j.destination}</span>
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--amber-sand)', marginTop: '3px' }}>
-                        {formatNumber(j.distanceKm, locale)} {t('common.km')} • {formatNumber(j.photos.length, locale)} {t('common.photos')}
+                        {formatNumber(j.distanceKm, locale)} {t('common.km')} • {formatNumber(j.waypoints?.reduce((sum, w) => sum + (w.photos?.length || 0), 0) || 0, locale)} {t('common.photos')}
                       </div>
                       {isSelected && (
                         <Link

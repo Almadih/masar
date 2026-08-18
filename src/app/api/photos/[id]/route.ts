@@ -20,23 +20,27 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     // 1. Look up photo record in the database
-    const photo = await prisma.photoPoint.findUnique({
+    const photo = await prisma.waypointPhoto.findUnique({
       where: { id: photoId },
       include: {
-        journey: {
-          select: {
-            id: true,
-            isPublic: true,
-            status: true,
-            authorId: true,
+        waypoint: {
+          include: {
+            journey: {
+              select: {
+                id: true,
+                isPublic: true,
+                status: true,
+                authorId: true,
+              },
+            },
           },
         },
       },
     });
 
-    if (!photo || !photo.journey) {
-      // If not in database, attempt fallback to local disk (e.g. temporary uploads or sample assets)
-      // but only if public access is allowed
+    const journey = photo?.waypoint?.journey;
+
+    if (!photo || !journey) {
       return new NextResponse('Photo not found', { status: 404 });
     }
 
@@ -46,7 +50,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       headers: reqHeaders,
     });
 
-    const isAllowed = canAccessJourney(photo.journey, session?.user);
+    const isAllowed = canAccessJourney(journey, session?.user);
 
     if (!isAllowed) {
       return new NextResponse(
@@ -64,7 +68,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const fileResult = await getPhotoFile(photoId);
 
     if (!fileResult) {
-      // If photo was an external URL (e.g. sample unsplash seed data)
+      // If photo was an external URL (e.g. sample seed data)
       if (photo.url && (photo.url.startsWith('http://') || photo.url.startsWith('https://'))) {
         return NextResponse.redirect(photo.url);
       }
@@ -73,7 +77,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     // 4. Set appropriate cache headers
-    const isPublicApproved = photo.journey.isPublic && photo.journey.status === 'APPROVED';
+    const isPublicApproved = journey.isPublic && journey.status === 'APPROVED';
     const cacheControl = isPublicApproved
       ? 'public, max-age=86400, stale-while-revalidate=3600'
       : 'private, no-cache, no-store, must-revalidate';

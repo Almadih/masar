@@ -50,7 +50,8 @@ export function AdminDashboard() {
       else hid++;
       if (j.status === 'FLAGGED') flg++;
       else if (j.status === 'PENDING') pen++;
-      photos += j.photos?.length || 0;
+      const jPhotos = j.waypoints?.reduce((sum, w) => sum + (w.photos?.length || 0), 0) || 0;
+      photos += jPhotos;
     }
     return {
       totalJourneys: journeys.length,
@@ -400,7 +401,7 @@ export function AdminDashboard() {
                       <td style={{ padding: '1rem 1.25rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--text-main)' }}>
                           <Camera size={14} color="var(--cyan-route)" />
-                          <span>{formatNumber(j.photos?.length || 0, locale)}</span>
+                          <span>{formatNumber(j.waypoints?.reduce((sum, w) => sum + (w.photos?.length || 0), 0) || 0, locale)}</span>
                         </div>
                       </td>
 

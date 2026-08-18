@@ -1,4 +1,4 @@
-import type { PhotoPoint } from '../types';
+import type { Waypoint } from '../types';
 
 export interface KnownLocation {
   name: string;
@@ -33,7 +33,114 @@ export const KNOWN_LOCATIONS: KnownLocation[] = [
   { name: 'Kampala', nameAr: 'كمبالا', latitude: 0.3476, longitude: 32.5825, country: 'Uganda', countryAr: 'أوغندا' },
   { name: 'Addis Ababa', nameAr: 'أديس أبابا', latitude: 9.0300, longitude: 38.7400, country: 'Ethiopia', countryAr: 'إثيوبيا' },
   { name: 'Jeddah', nameAr: 'جدة', latitude: 21.5433, longitude: 39.1728, country: 'Saudi Arabia', countryAr: 'المملكة العربية السعودية' },
+  { name: 'Nyala', nameAr: 'نيالا', latitude: 12.0500, longitude: 24.8833, country: 'Sudan', countryAr: 'السودان' },
+  { name: 'El Fasher', nameAr: 'الفاشر', latitude: 13.6279, longitude: 25.3494, country: 'Sudan', countryAr: 'السودان' },
+  { name: 'Geneina', nameAr: 'الجنينة', latitude: 13.4500, longitude: 22.4500, country: 'Sudan', countryAr: 'السودان' },
+  { name: 'Zalingei', nameAr: 'زالنجي', latitude: 12.9000, longitude: 23.4833, country: 'Sudan', countryAr: 'السودان' },
+  { name: 'Ed Daein', nameAr: 'الضعين', latitude: 11.4600, longitude: 26.1300, country: 'Sudan', countryAr: 'السودان' },
+  { name: 'Kadugli', nameAr: 'كادوقلي', latitude: 11.0167, longitude: 29.7167, country: 'Sudan', countryAr: 'السودان' },
+  { name: 'Damazin', nameAr: 'الدمازين', latitude: 11.7667, longitude: 34.3500, country: 'Sudan', countryAr: 'السودان' },
+  { name: 'Rabak', nameAr: 'ربك', latitude: 13.1809, longitude: 32.7400, country: 'Sudan', countryAr: 'السودان' },
+  { name: 'Shendi', nameAr: 'شندي', latitude: 16.6915, longitude: 33.4344, country: 'Sudan', countryAr: 'السودان' },
+  { name: 'Berber', nameAr: 'بربر', latitude: 18.0217, longitude: 33.9833, country: 'Sudan', countryAr: 'السودان' },
+  { name: 'Karima', nameAr: 'كريمة', latitude: 18.5500, longitude: 31.8500, country: 'Sudan', countryAr: 'السودان' },
+  { name: 'Abu Hamad', nameAr: 'أبو حمد', latitude: 19.5333, longitude: 33.3167, country: 'Sudan', countryAr: 'السودان' },
+  { name: 'Singa', nameAr: 'سنجة', latitude: 13.1500, longitude: 33.9333, country: 'Sudan', countryAr: 'السودان' },
+  { name: 'Adre / Chad Border', nameAr: 'معبر أدري - الحدود التشادية', latitude: 13.4667, longitude: 22.2000, country: 'Sudan/Chad', countryAr: 'السودان / تشاد' },
 ];
+
+export interface LocationSearchResult {
+  id: string;
+  name: string;
+  nameAr?: string;
+  fullAddress: string;
+  latitude: number;
+  longitude: number;
+  isPreset?: boolean;
+}
+
+/**
+ * Searches locations using both local presets and OpenStreetMap Nominatim API
+ */
+export async function searchLocations(query: string, locale: string = 'ar'): Promise<LocationSearchResult[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+
+  const results: LocationSearchResult[] = [];
+  const lower = trimmed.toLowerCase();
+
+  // 1. Search local known presets first (instant and verified)
+  for (const loc of KNOWN_LOCATIONS) {
+    const matchName = loc.name.toLowerCase().includes(lower);
+    const matchAr = loc.nameAr.includes(trimmed);
+    const matchCountry = loc.country.toLowerCase().includes(lower) || (loc.countryAr && loc.countryAr.includes(trimmed));
+
+    if (matchName || matchAr || matchCountry) {
+      const displayName = locale === 'ar' ? loc.nameAr : loc.name;
+      const displayCountry = locale === 'ar' ? (loc.countryAr || loc.country) : loc.country;
+      results.push({
+        id: `preset-${loc.name}-${loc.latitude}-${loc.longitude}`,
+        name: displayName,
+        nameAr: loc.nameAr,
+        fullAddress: `${displayName}, ${displayCountry}`,
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+        isPreset: true,
+      });
+    }
+  }
+
+  // 2. Query Nominatim for global/regional searches if query has 2+ characters
+  if (trimmed.length >= 2) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(trimmed)}&limit=6&addressdetails=1`,
+        {
+          headers: { 'User-Agent': 'MasarSudanDisplacementApp/1.0' },
+          signal: controller.signal,
+        }
+      );
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          for (const item of data) {
+            const lat = parseFloat(item.lat);
+            const lon = parseFloat(item.lon);
+            if (!isNaN(lat) && !isNaN(lon)) {
+              // Avoid duplicates with local presets that are very close (< 5km)
+              const isDupe = results.some(
+                r => calculateHaversineDistance(r.latitude, r.longitude, lat, lon) < 5
+              );
+              if (!isDupe) {
+                const parts = (item.display_name || '').split(',');
+                const title = parts[0]?.trim() || item.name || trimmed;
+                const details = parts.slice(1, 4).map((p: string) => p.trim()).join(', ');
+
+                results.push({
+                  id: `nom-${item.place_id || `${lat}-${lon}`}`,
+                  name: title,
+                  fullAddress: details ? `${title}, ${details}` : title,
+                  latitude: lat,
+                  longitude: lon,
+                  isPreset: false,
+                });
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Nominatim search failed or timed out:', e);
+    }
+  }
+
+  return results;
+}
 
 /**
  * Calculates Haversine distance in kilometers between two lat/lng points
@@ -58,11 +165,21 @@ export function calculateHaversineDistance(
 }
 
 /**
- * Calculates total path distance along an array of photo points
+ * Calculates total path distance along an array of waypoints
  */
-export function calculateTotalJourneyDistance(photos: PhotoPoint[]): number {
-  if (photos.length < 2) return 0;
-  const sorted = [...photos].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+export function calculateTotalJourneyDistance(
+  waypoints: Array<{ latitude: number; longitude: number; timestamp?: string; order?: number }>
+): number {
+  if (!waypoints || waypoints.length < 2) return 0;
+  const sorted = [...waypoints].sort((a, b) => {
+    if (a.order !== undefined && b.order !== undefined) {
+      return a.order - b.order;
+    }
+    if (a.timestamp && b.timestamp) {
+      return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+    }
+    return 0;
+  });
   let totalKm = 0;
   for (let i = 0; i < sorted.length - 1; i++) {
     totalKm += calculateHaversineDistance(

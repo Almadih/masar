@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import type { DisplacementJourney, PhotoPoint } from '@/types';
+import type { DisplacementJourney, Waypoint, WaypointPhoto } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { useJourney } from '@/context/JourneyContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -32,6 +32,7 @@ import {
   Lock,
   Globe,
   Bookmark,
+  Layers,
 } from 'lucide-react';
 
 const WhatsAppIcon = ({ size = 16 }: { size?: number }) => (
@@ -63,9 +64,11 @@ interface JourneyDetailPageProps {
 export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: initialJourney }) => {
   const { user, openAuthModal } = useAuth();
   const { journeys, toggleJourneyVisibility } = useJourney();
-  const { locale, t } = useLanguage();
+  const { locale, t, isRTL } = useLanguage();
   const { showToast } = useToast();
+
   const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
+  const [activePhotoIndexInWaypoint, setActivePhotoIndexInWaypoint] = useState<number>(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState<boolean>(false);
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
   const [showShareMenu, setShowShareMenu] = useState<boolean>(false);
@@ -138,23 +141,54 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
   const isAuthor = Boolean(user?.id && user.id === journey.authorId);
   const canManage = isAuthor || isAdmin;
 
-  const sortedPhotos = useMemo(() => {
-    return [...journey.photos].sort(
-      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
-  }, [journey.photos]);
+  const sortedWaypoints = useMemo(() => {
+    const wps = journey.waypoints || [];
+    return [...wps].sort((a, b) => {
+      if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
+      return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+    });
+  }, [journey.waypoints]);
 
-  const activePhoto: PhotoPoint | undefined = sortedPhotos[activeStepIndex] || sortedPhotos[0];
+  const totalPhotosCount = useMemo(() => {
+    return (journey.waypoints || []).reduce((acc, wp) => acc + (wp.photos?.length || 0), 0);
+  }, [journey.waypoints]);
+
+  const activeWaypoint: Waypoint | undefined = sortedWaypoints[activeStepIndex] || sortedWaypoints[0];
+  const waypointPhotos = activeWaypoint?.photos || [];
+  const activePhoto: WaypointPhoto | undefined = waypointPhotos[activePhotoIndexInWaypoint] || waypointPhotos[0];
+
+  // Reset photo index when switching waypoints
+  const handleSelectWaypoint = (index: number) => {
+    setActiveStepIndex(index);
+    setActivePhotoIndexInWaypoint(0);
+  };
 
   const handleNextStep = () => {
-    if (activeStepIndex < sortedPhotos.length - 1) {
-      setActiveStepIndex(prev => prev + 1);
+    if (activeStepIndex < sortedWaypoints.length - 1) {
+      handleSelectWaypoint(activeStepIndex + 1);
     }
   };
 
   const handlePrevStep = () => {
     if (activeStepIndex > 0) {
-      setActiveStepIndex(prev => prev - 1);
+      handleSelectWaypoint(activeStepIndex - 1);
+    }
+  };
+
+  // Switch photo within active waypoint
+  const handleNextPhotoInWaypoint = () => {
+    if (activePhotoIndexInWaypoint < waypointPhotos.length - 1) {
+      setActivePhotoIndexInWaypoint(prev => prev + 1);
+    } else {
+      setActivePhotoIndexInWaypoint(0);
+    }
+  };
+
+  const handlePrevPhotoInWaypoint = () => {
+    if (activePhotoIndexInWaypoint > 0) {
+      setActivePhotoIndexInWaypoint(prev => prev - 1);
+    } else {
+      setActivePhotoIndexInWaypoint(Math.max(0, waypointPhotos.length - 1));
     }
   };
 
@@ -171,19 +205,23 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
           setIsLightboxOpen(false);
         }
       } else if (e.key === 'ArrowRight') {
-        if (activeStepIndex < sortedPhotos.length - 1) {
-          setActiveStepIndex(prev => prev + 1);
+        if (isLightboxOpen && waypointPhotos.length > 1) {
+          handleNextPhotoInWaypoint();
+        } else if (activeStepIndex < sortedWaypoints.length - 1) {
+          handleSelectWaypoint(activeStepIndex + 1);
         }
       } else if (e.key === 'ArrowLeft') {
-        if (activeStepIndex > 0) {
-          setActiveStepIndex(prev => prev - 1);
+        if (isLightboxOpen && waypointPhotos.length > 1) {
+          handlePrevPhotoInWaypoint();
+        } else if (activeStepIndex > 0) {
+          handleSelectWaypoint(activeStepIndex - 1);
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeStepIndex, sortedPhotos.length, isLightboxOpen]);
+  }, [activeStepIndex, sortedWaypoints.length, isLightboxOpen, waypointPhotos.length, activePhotoIndexInWaypoint]);
 
   const getShareUrl = () => (typeof window !== 'undefined' ? window.location.href : '');
   const getShareText = () =>
@@ -713,7 +751,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                 }}
               >
                 <Camera size={14} />
-                <span>{formatPhotosCount(journey.photos.length, locale, t)}</span>
+                <span>{formatPhotosCount(totalPhotosCount, locale, t)}</span>
               </div>
 
               <div
@@ -776,7 +814,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
               </div>
             </div>
 
-            {/* Tags & Quick Social Share Strip */}
+            {/* Tags */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               {journey.tags && journey.tags.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
@@ -876,7 +914,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
         </div>
 
         {/* Interactive Milestone Scrubber Bar */}
-        {sortedPhotos.length > 1 && (
+        {sortedWaypoints.length > 1 && (
           <div
             className="glass-panel"
             style={{
@@ -898,7 +936,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                   {t('journeyDetail.milestoneScrubber')}
                 </span>
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                  ({t('journeyDetail.milestoneCountOf', { current: formatNumber(activeStepIndex + 1, locale), total: formatNumber(sortedPhotos.length, locale) })})
+                  ({t('journeyDetail.milestoneCountOf', { current: formatNumber(activeStepIndex + 1, locale), total: formatNumber(sortedWaypoints.length, locale) })})
                 </span>
               </div>
 
@@ -927,7 +965,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                     <ChevronLeft size={16} className="rtl-mirror" />
                   </button>
                   <button
-                    disabled={activeStepIndex === sortedPhotos.length - 1}
+                    disabled={activeStepIndex === sortedWaypoints.length - 1}
                     onClick={handleNextStep}
                     aria-label="Next milestone"
                     style={{
@@ -937,10 +975,10 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                       width: '28px',
                       height: '28px',
                       borderRadius: '50%',
-                      background: activeStepIndex === sortedPhotos.length - 1 ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.08)',
+                      background: activeStepIndex === sortedWaypoints.length - 1 ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.08)',
                       border: '1px solid var(--glass-border)',
-                      color: activeStepIndex === sortedPhotos.length - 1 ? 'var(--text-dim)' : 'var(--text-main)',
-                      cursor: activeStepIndex === sortedPhotos.length - 1 ? 'not-allowed' : 'pointer',
+                      color: activeStepIndex === sortedWaypoints.length - 1 ? 'var(--text-dim)' : 'var(--text-main)',
+                      cursor: activeStepIndex === sortedWaypoints.length - 1 ? 'not-allowed' : 'pointer',
                     }}
                   >
                     <ChevronRight size={16} className="rtl-mirror" />
@@ -954,9 +992,10 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
               style={{
                 position: 'relative',
                 width: '100%',
-                padding: '16px 12px 10px',
+                height: '44px',
                 display: 'flex',
                 alignItems: 'center',
+                margin: '4px 0 10px',
               }}
             >
               {/* Background Track Line */}
@@ -966,64 +1005,77 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                   insetInlineStart: '16px',
                   insetInlineEnd: '16px',
                   height: '4px',
-                  background: 'rgba(255, 255, 255, 0.1)',
+                  background: 'rgba(255, 255, 255, 0.12)',
                   borderRadius: '2px',
                   top: '50%',
                   transform: 'translateY(-50%)',
+                  pointerEvents: 'none',
                 }}
               />
 
               {/* Active Progress Line */}
-              <div
-                style={{
-                  position: 'absolute',
-                  insetInlineStart: '16px',
-                  width: `calc(${(activeStepIndex / Math.max(1, sortedPhotos.length - 1)) * 100}% - 32px)`,
-                  height: '4px',
-                  background: 'linear-gradient(90deg, var(--primary-terracotta), var(--amber-sand))',
-                  borderRadius: '2px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                }}
-              />
+              {(() => {
+                const progressRatio = activeStepIndex / Math.max(1, sortedWaypoints.length - 1);
+                return (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      insetInlineStart: '16px',
+                      width: `calc(${progressRatio * 100}% - ${progressRatio * 32}px)`,
+                      height: '4px',
+                      background: isRTL
+                        ? 'linear-gradient(to left, var(--primary-terracotta), var(--amber-sand))'
+                        : 'linear-gradient(to right, var(--primary-terracotta), var(--amber-sand))',
+                      borderRadius: '2px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                );
+              })()}
 
               {/* Waypoints Array */}
               <div
                 style={{
                   position: 'relative',
                   width: '100%',
+                  height: '100%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   zIndex: 2,
                 }}
               >
-                {sortedPhotos.map((photo, idx) => {
+                {sortedWaypoints.map((wp, idx) => {
                   const isActive = idx === activeStepIndex;
                   const isPassed = idx < activeStepIndex;
+                  const count = wp.photos?.length || 0;
 
                   return (
                     <button
-                      key={photo.id}
-                      onClick={() => setActiveStepIndex(idx)}
-                      title={`${formatNumber(idx + 1, locale)}. ${photo.locationName} (${photo.timestamp.split(' ')[0]})`}
+                      key={wp.id}
+                      onClick={() => handleSelectWaypoint(idx)}
+                      title={`${formatNumber(idx + 1, locale)}. ${wp.locationName} (${wp.timestamp.split(' ')[0]}) - ${formatPhotosCount(count, locale, t)}`}
                       style={{
                         position: 'relative',
+                        width: '32px',
+                        height: '32px',
                         display: 'flex',
-                        flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
                         background: 'transparent',
                         border: 'none',
                         cursor: 'pointer',
-                        padding: '4px',
+                        padding: 0,
+                        margin: 0,
                       }}
                     >
                       <div
                         style={{
-                          width: isActive ? '24px' : '16px',
-                          height: isActive ? '24px' : '16px',
+                          width: isActive ? '22px' : '14px',
+                          height: isActive ? '22px' : '14px',
                           borderRadius: '50%',
                           background: isActive
                             ? 'var(--primary-terracotta)'
@@ -1035,7 +1087,11 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                             : isPassed
                             ? '2px solid var(--amber-sand)'
                             : '2px solid var(--glass-border)',
-                          boxShadow: isActive ? '0 0 14px rgba(217, 107, 67, 0.8)' : 'none',
+                          boxShadow: isActive
+                            ? '0 0 14px rgba(217, 107, 67, 0.8), 0 0 4px rgba(0,0,0,0.5)'
+                            : isPassed
+                            ? '0 0 6px rgba(230, 167, 65, 0.4)'
+                            : 'none',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -1043,7 +1099,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                           fontWeight: 800,
                           color: '#ffffff',
                           transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                          transform: isActive ? 'scale(1.15)' : 'scale(1)',
+                          flexShrink: 0,
                         }}
                       >
                         {isActive ? formatNumber(idx + 1, locale) : ''}
@@ -1054,12 +1110,14 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                         <div
                           style={{
                             position: 'absolute',
-                            top: '32px',
+                            top: '36px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
                             background: 'rgba(11, 15, 25, 0.96)',
                             backdropFilter: 'blur(10px)',
                             border: '1px solid var(--primary-terracotta)',
                             borderRadius: 'var(--radius-full)',
-                            padding: '2px 8px',
+                            padding: '3px 10px',
                             fontSize: '11px',
                             fontWeight: 700,
                             color: 'var(--amber-sand)',
@@ -1067,9 +1125,17 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                             pointerEvents: 'none',
                             boxShadow: 'var(--shadow-subtle)',
                             zIndex: 10,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
                           }}
                         >
-                          {photo.locationName}
+                          <span>{wp.locationName}</span>
+                          {count > 1 && (
+                            <span style={{ fontSize: '9px', background: 'rgba(230, 167, 65, 0.3)', padding: '1px 4px', borderRadius: '4px' }}>
+                              {formatNumber(count, locale)}📷
+                            </span>
+                          )}
                         </div>
                       )}
                     </button>
@@ -1098,12 +1164,14 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
             <MapView
               journeys={[journey]}
               selectedJourney={journey}
+              activeWaypoint={activeWaypoint || null}
               activePhoto={activePhoto || null}
-              onPhotoClick={(_photo, idx) => setActiveStepIndex(idx)}
+              onWaypointClick={(_wp, idx) => handleSelectWaypoint(idx)}
+              onPhotoClick={(_wp, idx) => handleSelectWaypoint(idx)}
             />
 
             {/* Floating Navigation Controls Overlay */}
-            {sortedPhotos.length > 0 && (
+            {sortedWaypoints.length > 0 && (
               <div
                 style={{
                   position: 'absolute',
@@ -1140,20 +1208,20 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                 </button>
 
                 <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--amber-sand)' }}>
-                  {t('journeyDetail.milestoneCountOf', { current: formatNumber(activeStepIndex + 1, locale), total: formatNumber(sortedPhotos.length, locale) })}
+                  {t('journeyDetail.milestoneCountOf', { current: formatNumber(activeStepIndex + 1, locale), total: formatNumber(sortedWaypoints.length, locale) })}
                 </span>
 
                 <button
-                  disabled={activeStepIndex === sortedPhotos.length - 1}
+                  disabled={activeStepIndex === sortedWaypoints.length - 1}
                   onClick={handleNextStep}
                   style={{
-                    color: activeStepIndex === sortedPhotos.length - 1 ? 'var(--text-dim)' : 'var(--text-main)',
+                    color: activeStepIndex === sortedWaypoints.length - 1 ? 'var(--text-dim)' : 'var(--text-main)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px',
                     fontSize: '12px',
                     fontWeight: 700,
-                    cursor: activeStepIndex === sortedPhotos.length - 1 ? 'not-allowed' : 'pointer',
+                    cursor: activeStepIndex === sortedWaypoints.length - 1 ? 'not-allowed' : 'pointer',
                   }}
                 >
                   {t('journeyDetail.next')} <ChevronRight size={16} className="rtl-mirror" />
@@ -1174,80 +1242,211 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
               overflowY: 'auto',
             }}
           >
-            {/* Active Milestone Card */}
-            {activePhoto ? (
+            {/* Active Waypoint Card */}
+            {activeWaypoint ? (
               <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--glass-border)', background: 'rgba(15, 22, 38, 0.6)' }}>
-                <div
-                  style={{
-                    position: 'relative',
-                    width: '100%',
-                    height: '240px',
-                    borderRadius: 'var(--radius-md)',
-                    overflow: 'hidden',
-                    marginBottom: '1rem',
-                  }}
-                >
-                  <img
-                    src={activePhoto.url}
-                    alt={activePhoto.caption || activePhoto.locationName}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                  <button
-                    onClick={() => setIsLightboxOpen(true)}
-                    title={t('journeyDetail.expandPhoto')}
-                    style={{
-                      position: 'absolute',
-                      top: '10px',
-                      insetInlineEnd: '10px',
-                      background: 'rgba(11, 15, 25, 0.85)',
-                      padding: '7px',
-                      borderRadius: '50%',
-                      color: '#ffffff',
-                      cursor: 'pointer',
-                      border: '1px solid var(--glass-border)',
-                    }}
-                  >
-                    <Maximize2 size={16} />
-                  </button>
-
+                {/* Main Photo View */}
+                {activePhoto ? (
                   <div
                     style={{
-                      position: 'absolute',
-                      bottom: '10px',
-                      insetInlineStart: '10px',
-                      background: 'rgba(11, 15, 25, 0.85)',
-                      backdropFilter: 'blur(8px)',
-                      padding: '4px 10px',
-                      borderRadius: 'var(--radius-full)',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      color: 'var(--amber-sand)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '5px',
+                      position: 'relative',
+                      width: '100%',
+                      height: '240px',
+                      borderRadius: 'var(--radius-md)',
+                      overflow: 'hidden',
+                      marginBottom: '1rem',
+                      background: 'rgba(0, 0, 0, 0.3)',
                     }}
                   >
-                    <Sparkles size={13} /> {t('journeyDetail.milestoneNumber', { step: formatNumber(activeStepIndex + 1, locale) })}
-                  </div>
-                </div>
+                    <img
+                      src={activePhoto.url}
+                      alt={activePhoto.caption || activeWaypoint.locationName}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
 
+                    {/* Expand Button */}
+                    <button
+                      onClick={() => setIsLightboxOpen(true)}
+                      title={t('journeyDetail.expandPhoto')}
+                      style={{
+                        position: 'absolute',
+                        top: '10px',
+                        insetInlineEnd: '10px',
+                        background: 'rgba(11, 15, 25, 0.85)',
+                        padding: '7px',
+                        borderRadius: '50%',
+                        color: '#ffffff',
+                        cursor: 'pointer',
+                        border: '1px solid var(--glass-border)',
+                        zIndex: 5,
+                      }}
+                    >
+                      <Maximize2 size={16} />
+                    </button>
+
+                    {/* Step & Photo Counter Badges */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        bottom: '10px',
+                        insetInlineStart: '10px',
+                        background: 'rgba(11, 15, 25, 0.85)',
+                        backdropFilter: 'blur(8px)',
+                        padding: '4px 10px',
+                        borderRadius: 'var(--radius-full)',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        color: 'var(--amber-sand)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        zIndex: 5,
+                      }}
+                    >
+                      <Sparkles size={13} />
+                      <span>{t('journeyDetail.milestoneNumber', { step: formatNumber(activeStepIndex + 1, locale) })}</span>
+                      {waypointPhotos.length > 1 && (
+                        <span style={{ color: 'var(--cyan-route)', borderInlineStart: '1px solid var(--glass-border)', paddingInlineStart: '6px' }}>
+                          {t('journeyDetail.photoOfMilestone', {
+                            current: formatNumber(activePhotoIndexInWaypoint + 1, locale),
+                            total: formatNumber(waypointPhotos.length, locale),
+                          })}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* In-waypoint photo navigation buttons */}
+                    {waypointPhotos.length > 1 && (
+                      <>
+                        <button
+                          onClick={handlePrevPhotoInWaypoint}
+                          title={t('journeyDetail.prevPhoto')}
+                          style={{
+                            position: 'absolute',
+                            top: '50%',
+                            insetInlineStart: '8px',
+                            transform: 'translateY(-50%)',
+                            background: 'rgba(11, 15, 25, 0.8)',
+                            color: '#ffffff',
+                            borderRadius: '50%',
+                            width: '30px',
+                            height: '30px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: '1px solid var(--glass-border)',
+                            cursor: 'pointer',
+                            zIndex: 6,
+                          }}
+                        >
+                          <ChevronLeft size={18} className="rtl-mirror" />
+                        </button>
+                        <button
+                          onClick={handleNextPhotoInWaypoint}
+                          title={t('journeyDetail.nextPhoto')}
+                          style={{
+                            position: 'absolute',
+                            top: '50%',
+                            insetInlineEnd: '8px',
+                            transform: 'translateY(-50%)',
+                            background: 'rgba(11, 15, 25, 0.8)',
+                            color: '#ffffff',
+                            borderRadius: '50%',
+                            width: '30px',
+                            height: '30px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: '1px solid var(--glass-border)',
+                            cursor: 'pointer',
+                            zIndex: 6,
+                          }}
+                        >
+                          <ChevronRight size={18} className="rtl-mirror" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      height: '140px',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px dashed var(--glass-border)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexDirection: 'column',
+                      gap: '8px',
+                      color: 'var(--text-muted)',
+                      marginBottom: '1rem',
+                    }}
+                  >
+                    <MapPin size={24} color="var(--primary-terracotta)" />
+                    <span style={{ fontSize: '12px' }}>{t('journeyDetail.noPhotosYet')}</span>
+                  </div>
+                )}
+
+                {/* Multiple Photos Thumbnails Strip for this Waypoint */}
+                {waypointPhotos.length > 1 && (
+                  <div style={{ marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                      <Layers size={13} color="var(--amber-sand)" />
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>
+                        {t('journeyDetail.galleryThumbnails')} ({formatNumber(waypointPhotos.length, locale)})
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                      {waypointPhotos.map((photo, pIdx) => {
+                        const isPhotoActive = pIdx === activePhotoIndexInWaypoint;
+                        return (
+                          <button
+                            key={photo.id}
+                            onClick={() => setActivePhotoIndexInWaypoint(pIdx)}
+                            style={{
+                              position: 'relative',
+                              width: '56px',
+                              height: '56px',
+                              borderRadius: 'var(--radius-sm)',
+                              overflow: 'hidden',
+                              border: isPhotoActive ? '2px solid var(--amber-sand)' : '1px solid var(--glass-border)',
+                              opacity: isPhotoActive ? 1 : 0.65,
+                              transform: isPhotoActive ? 'scale(1.05)' : 'scale(1)',
+                              transition: 'all 0.2s ease',
+                              flexShrink: 0,
+                              cursor: 'pointer',
+                              padding: 0,
+                              background: 'transparent',
+                            }}
+                          >
+                            <img src={photo.url} alt={photo.caption || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Waypoint Info Header */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px', flexWrap: 'wrap', gap: '4px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <MapPin size={16} color="var(--primary-terracotta)" />
                     <span style={{ fontSize: '15px', fontWeight: 800, color: '#ffffff' }}>
-                      {activePhoto.locationName}
+                      {activeWaypoint.locationName}
                     </span>
                   </div>
                   <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Clock size={13} /> {activePhoto.timestamp}
+                    <Clock size={13} /> {activeWaypoint.timestamp}
                   </span>
                 </div>
 
+                {/* Photo Caption or Waypoint Description */}
                 <p style={{ fontSize: '14px', color: 'var(--text-main)', lineHeight: 1.5, marginBottom: '8px' }}>
-                  &ldquo;{activePhoto.caption || t('journeyDetail.noCaption')}&rdquo;
+                  &ldquo;{activePhoto?.caption || activeWaypoint.description || t('journeyDetail.noCaption')}&rdquo;
                 </p>
 
-                {activePhoto.notes && (
+                {/* Field Notes */}
+                {(activePhoto?.notes || activeWaypoint.description) && (
                   <div
                     style={{
                       background: 'rgba(230, 167, 65, 0.12)',
@@ -1260,7 +1459,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                       lineHeight: 1.5,
                     }}
                   >
-                    <strong>{t('journeyDetail.personalFieldNote')}</strong> {activePhoto.notes}
+                    <strong>{t('journeyDetail.personalFieldNote')}</strong> {activePhoto?.notes || activeWaypoint.description}
                   </div>
                 )}
               </div>
@@ -1274,7 +1473,7 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
             <div style={{ flex: 1, overflowY: 'auto', padding: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
                 <h4 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  {t('journeyDetail.chronologicalTimeline', { count: formatNumber(sortedPhotos.length, locale) })}
+                  {t('journeyDetail.chronologicalTimeline', { count: formatNumber(sortedWaypoints.length, locale) })}
                 </h4>
                 <span style={{ fontSize: '11px', color: 'var(--cyan-route)' }}>
                   {t('journeyDetail.tapMilestoneTip')}
@@ -1282,12 +1481,15 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {sortedPhotos.map((p, idx) => {
+                {sortedWaypoints.map((wp, idx) => {
                   const isSelected = idx === activeStepIndex;
+                  const count = wp.photos?.length || 0;
+                  const thumbUrl = wp.photos?.[0]?.url;
+
                   return (
                     <div
-                      key={p.id}
-                      onClick={() => setActiveStepIndex(idx)}
+                      key={wp.id}
+                      onClick={() => handleSelectWaypoint(idx)}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -1318,18 +1520,50 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
                         {formatNumber(idx + 1, locale)}
                       </div>
 
+                      {thumbUrl && (
+                        <img
+                          src={thumbUrl}
+                          alt={wp.locationName}
+                          style={{
+                            width: '38px',
+                            height: '38px',
+                            borderRadius: 'var(--radius-sm)',
+                            objectFit: 'cover',
+                            flexShrink: 0,
+                            border: '1px solid var(--glass-border)',
+                          }}
+                        />
+                      )}
+
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <span style={{ fontSize: '13px', fontWeight: 700, color: isSelected ? 'var(--amber-sand)' : '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {p.locationName}
+                            {wp.locationName}
                           </span>
                           <span style={{ fontSize: '11px', color: 'var(--text-muted)', flexShrink: 0 }}>
-                            {p.timestamp.split(' ')[0]}
+                            {wp.timestamp.split(' ')[0]}
                           </span>
                         </div>
-                        <p style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '2px' }}>
-                          {p.caption || t('journeyDetail.milestonePhotoFallback')}
-                        </p>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', marginTop: '2px' }}>
+                          <p style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', margin: 0 }}>
+                            {wp.photos?.[0]?.caption || wp.description || t('journeyDetail.milestonePhotoFallback')}
+                          </p>
+                          {count > 1 && (
+                            <span
+                              style={{
+                                fontSize: '10px',
+                                fontWeight: 700,
+                                color: 'var(--amber-sand)',
+                                background: 'rgba(230, 167, 65, 0.15)',
+                                padding: '1px 6px',
+                                borderRadius: 'var(--radius-full)',
+                                flexShrink: 0,
+                              }}
+                            >
+                              📷 {formatNumber(count, locale)}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
@@ -1371,11 +1605,96 @@ export const JourneyDetailPage: React.FC<JourneyDetailPageProps> = ({ journey: i
           >
             <X size={24} />
           </button>
-          <img
-            src={activePhoto.url}
-            alt={activePhoto.locationName}
-            style={{ maxWidth: '95vw', maxHeight: '88vh', objectFit: 'contain', borderRadius: '8px' }}
-          />
+
+          {/* Lightbox Prev Photo */}
+          {waypointPhotos.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePrevPhotoInWaypoint();
+              }}
+              style={{
+                position: 'absolute',
+                top: '50%',
+                insetInlineStart: '20px',
+                transform: 'translateY(-50%)',
+                background: 'rgba(255, 255, 255, 0.15)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '50%',
+                width: '44px',
+                height: '44px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                zIndex: 3001,
+              }}
+            >
+              <ChevronLeft size={24} className="rtl-mirror" />
+            </button>
+          )}
+
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              maxWidth: '95vw',
+              maxHeight: '90vh',
+            }}
+          >
+            <img
+              src={activePhoto.url}
+              alt={activePhoto.caption || activeWaypoint?.locationName || ''}
+              style={{ maxWidth: '95vw', maxHeight: '80vh', objectFit: 'contain', borderRadius: '8px' }}
+            />
+            <div style={{ marginTop: '12px', textAlign: 'center', color: '#ffffff' }}>
+              <div style={{ fontWeight: 700, fontSize: '15px' }}>
+                {activeWaypoint?.locationName}
+                {waypointPhotos.length > 1 && (
+                  <span style={{ fontSize: '12px', color: 'var(--amber-sand)', marginInlineStart: '8px' }}>
+                    ({formatNumber(activePhotoIndexInWaypoint + 1, locale)} / {formatNumber(waypointPhotos.length, locale)})
+                  </span>
+                )}
+              </div>
+              {activePhoto.caption && (
+                <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  {activePhoto.caption}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Lightbox Next Photo */}
+          {waypointPhotos.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleNextPhotoInWaypoint();
+              }}
+              style={{
+                position: 'absolute',
+                top: '50%',
+                insetInlineEnd: '20px',
+                transform: 'translateY(-50%)',
+                background: 'rgba(255, 255, 255, 0.15)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '50%',
+                width: '44px',
+                height: '44px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                zIndex: 3001,
+              }}
+            >
+              <ChevronRight size={24} className="rtl-mirror" />
+            </button>
+          )}
         </div>
       )}
 

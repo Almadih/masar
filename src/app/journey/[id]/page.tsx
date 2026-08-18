@@ -52,7 +52,7 @@ export async function generateMetadata({ params }: JourneyPageProps): Promise<Me
     };
   }
 
-  const coverPhoto = journey.photos[0];
+  const coverPhoto = journey.waypoints?.[0]?.photos?.[0];
   const pageTitle = `${journey.title} | MASAR (مسار)`;
   const description = `${journey.summary.slice(0, 160)} — Path from ${journey.startLocation} to ${journey.destination} (${journey.distanceKm} km).`;
 
