@@ -101,7 +101,7 @@ export const MapView: React.FC<MapViewProps> = ({
         try {
           map.fitBounds(L.latLngBounds(validCoords), { padding: [50, 50], maxZoom: 12 });
           return;
-        } catch {}
+        } catch { }
       }
     }
 
@@ -359,7 +359,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 ${photoCountLabel}
               </div>
               <div style="font-size: 11px; color: #9ca3af; margin-bottom: 6px;">📅 ${waypoint.timestamp}</div>
-              <p style="font-size: 11px; color: #d1d5db; line-height: 1.3;">"${waypoint.description || primaryPhoto?.caption || ''}"</p>
+              <p style="font-size: 11px; color: #d1d5db; line-height: 1.3;">${waypoint.description || primaryPhoto?.caption || ''}</p>
             </div>
           </div>
         `;
