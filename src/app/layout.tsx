@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import '@/index.css';
 import '@/App.css';
 import 'leaflet/dist/leaflet.css';
+import { Analytics } from "@vercel/analytics/next"
 
 const siteUrl =
   process.env.NEXT_PUBLIC_APP_URL ||
@@ -152,6 +153,7 @@ export default function RootLayout({
         />
       </head>
       <body>{children}</body>
+      <Analytics />
     </html>
   );
 }
